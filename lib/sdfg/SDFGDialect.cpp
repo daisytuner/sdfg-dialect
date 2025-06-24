@@ -1,0 +1,16 @@
+#include "sdfg/SDFGDialect.h"
+#include "sdfg/SDFGOps.h"
+
+using namespace mlir;
+using namespace mlir::sdfg;
+
+//===----------------------------------------------------------------------===//
+// SDFG dialect.
+//===----------------------------------------------------------------------===//
+
+void SDFGDialect::initialize() {
+  addOperations<
+#define GET_OP_LIST
+#include "sdfg/SDFGOps.cpp.inc"
+      >();
+}
