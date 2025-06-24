@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Unit Tests (ASAN)
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
       - name: Build and test
         run: |
           mkdir build && cd build
-          cmake -G Ninja -DCMAKE_C_COMPILER=clang-19 -DCMAKE_CXX_COMPILER=clang++-19 -DCMAKE_BUILD_TYPE=Debug -DMLIR_DIR=/usr/lib/llvm-19/lib/cmake/mlir/ -DLLVM_EXTERNAL_LIT=/opt/hostedtoolcache/Python/3.10.18/x64/bin/lit ..
+          cmake -G Ninja -DCMAKE_C_COMPILER=clang-19 -DCMAKE_CXX_COMPILER=clang++-19 -DCMAKE_BUILD_TYPE=Debug -DUSE_SANITIZER=address -DMLIR_DIR=/usr/lib/llvm-19/lib/cmake/mlir/ -DLLVM_EXTERNAL_LIT=/opt/hostedtoolcache/Python/3.10.18/x64/bin/lit ..
           ninja -j$(nproc)
 
           cmake --build . --target check-sdfg-opt
