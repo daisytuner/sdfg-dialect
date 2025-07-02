@@ -11,8 +11,8 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#include "sdfg/SDFGDialect.h"
-#include "sdfg/SDFGOpsDialect.cpp.inc"
+#include "sdfg/Dialect/SDFGDialect.h"
+#include "sdfg/Dialect/SDFGOpsDialect.cpp.inc"
 
 int main(int argc, char **argv) {
   mlir::registerAllPasses();
@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
   registry.insert<mlir::sdfg::SDFGDialect>();
   registry.insert<mlir::func::FuncDialect>();
   registry.insert<mlir::arith::ArithDialect>();
+  mlir::registerAllDialects(registry);
 
   return mlir::asMainReturnCode(
       mlir::MlirOptMain(argc, argv, "SDFG optimizer driver\n", registry));
