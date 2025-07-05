@@ -2,9 +2,7 @@
 #define SDFG_SDFGLibraryNode
 
 /// Defining the SDFG library call.
-def SDFG_LibraryNodeOp : SDFG_Op<"library_node", [
-    ParentOneOf<["BlockOp"]>,
-]> {
+def SDFG_LibraryNodeOp : SDFG_Op<"library_node", [AttrSizedOperandSegments]> {
   let summary     = "Library Node";
   let description = [{
     SDFG library node
@@ -12,7 +10,8 @@ def SDFG_LibraryNodeOp : SDFG_Op<"library_node", [
 
   let arguments = (ins
     StrAttr:$code,
-    Variadic<AnyType>:$operands
+    Variadic<AnyType>:$inputs,
+    Variadic<AnyType>:$output_operands
   );
 
   let results = (outs
@@ -21,9 +20,8 @@ def SDFG_LibraryNodeOp : SDFG_Op<"library_node", [
 
   let hasCustomAssemblyFormat = 1;
   let assemblyFormat = [{
-    $code $operands `:` type($operands) `->` type($results) attr-dict
+    $code `ins` ` ` $inputs `:` type($inputs) `outs` $output_operands `:` type($output_operands) `->` type($results) attr-dict
   }];
-
 }
 
 #endif // SDFG_SDFGLibraryNode
