@@ -11,16 +11,26 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#include "sdfg/SDFGDialect.h"
-#include "sdfg/SDFGOpsDialect.cpp.inc"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "mlir/Dialect/Tensor/IR/Tensor.h"
+
+#include "sdfg/Conversion/LinalgToSDFG/Passes.h"
+#include "sdfg/Dialect/SDFGDialect.h"
+#include "sdfg/Dialect/SDFGOpsDialect.cpp.inc"
 
 int main(int argc, char **argv) {
   mlir::registerAllPasses();
+
+  mlir::sdfg::conversion::registerLinalgToSDFGPasses();
+
 
   mlir::DialectRegistry registry;
   registry.insert<mlir::sdfg::SDFGDialect>();
   registry.insert<mlir::func::FuncDialect>();
   registry.insert<mlir::arith::ArithDialect>();
+  registry.insert<mlir::linalg::LinalgDialect>();
+  registry.insert<mlir::tensor::TensorDialect>();
+  mlir::registerAllDialects(registry);
 
   return mlir::asMainReturnCode(
       mlir::MlirOptMain(argc, argv, "SDFG optimizer driver\n", registry));

@@ -1,5 +1,5 @@
-#include "sdfg/SDFGDialect.h"
-#include "sdfg/SDFGOps.h"
+#include "sdfg/Dialect/SDFGDialect.h"
+#include "sdfg/Dialect/SDFGOps.h"
 
 using namespace mlir;
 using namespace mlir::sdfg;
@@ -11,6 +11,6 @@ using namespace mlir::sdfg;
 void SDFGDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
-#include "sdfg/SDFGOps.cpp.inc"
+#include "sdfg/Dialect/SDFGOps.cpp.inc"
       >();
 }

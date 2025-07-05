@@ -5,6 +5,7 @@ set(LIBS
         ${conversion_libs}
         MLIROptLib
         MLIRSDFG
+        LinalgToSDFG
         )
 add_llvm_executable(sdfg-opt sdfg-opt.cpp)
 
