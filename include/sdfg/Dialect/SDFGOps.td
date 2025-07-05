@@ -2,6 +2,7 @@
 #define SDFG_OPS
 
 include "SDFGDialect.td"
+include "mlir/IR/OpBase.td" 
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
@@ -9,12 +10,12 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 // Nodes
 //===----------------------------------------------------------------------===//
 
-include "sdfg/Dialect/nodes/sdfg.td"
+include "sdfg/Dialect/controlflow/sdfg.td"
+include "sdfg/Dialect/controlflow/block.td"
+include "sdfg/Dialect/dataflow/library_node.td"
 
 //===----------------------------------------------------------------------===//
 // Ops
 //===----------------------------------------------------------------------===//
-
-include "sdfg/Dialect/ops/symbol.td"
 
 #endif // SDFG_OPS

@@ -1,7 +1,3 @@
-// Copyright (c) 2021-2023, Scalable Parallel Computing Lab, ETH Zurich
-
-/// Table-driven file for SDFG nodes.
-
 #ifndef SDFG_SDFGNode
 #define SDFG_SDFGNode
 
@@ -11,30 +7,25 @@ def SDFG_SDFGNode : SDFG_Op<"sdfg", [
     NoTerminator,
     IsolatedFromAbove,
     SymbolTable,
+    Symbol,
     DeclareOpInterfaceMethods<SymbolUserOpInterface>
 ]> {
     let summary = "SDFG";
     let description = [{
-        Describes an SDFG.
-        For example:
-
-        ```mlir
-        sdfg.sdfg{} {
-            ...
-        }
-        ```
+        A stateful dataflow multigraph region.
     }];
+    let hasCustomAssemblyFormat = 1;
 
     let regions = (region SizedRegion<1>:$body);
 
-    let assemblyFormat = [{
-        attr-dict-with-keyword $body
-    }];
-
     let arguments = (ins 
-        I32Attr:$ID,
-        I32Attr:$num_args
+        SymbolNameAttr:$sym_name,
+        DefaultValuedAttr<I32Attr, "0">:$num_args
     );
+
+    let assemblyFormat = [{
+        $sym_name attr-dict-with-keyword $body
+    }];
 
     let extraClassDeclaration = [{
         static SDFGNode create(PatternRewriter &rewriter, Location location, unsigned num_args, TypeRange args);

@@ -3,7 +3,7 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Builders.h"
 #include "llvm/ADT/MapVector.h"
-#include "sdfg/Utils/IDGenerator.h"
+#include "sdfg/Dialect/IDGenerator.h"
 
 using namespace mlir;
 using namespace mlir::sdfg;
@@ -16,6 +16,8 @@ using namespace mlir::sdfg;
 #define GET_OP_DEFS
 #include "sdfg/Dialect/SDFGOps.cpp.inc"
 
+// SDFGNodeOp
+
 LogicalResult SDFGNode::verifySymbolUses(SymbolTableCollection &symbolTable) {
   // Verification logic goes here (currently a no-op)
   return success();
@@ -23,15 +25,19 @@ LogicalResult SDFGNode::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 SDFGNode SDFGNode::create(PatternRewriter &rewriter, Location loc,
                           unsigned num_args, TypeRange args) {
-  // Create SDFGNode directly with attributes.
-  SDFGNode sdfg = rewriter.create<SDFGNode>(
-      loc, utils::generateID(), num_args);
+  // Generate a unique SDFG name from the ID.
+  std::string name = "sdfg_" + std::to_string(utils::generateID());
+  auto nameAttr = rewriter.getStringAttr(name);
+  auto numArgsAttr = rewriter.getI32IntegerAttr(num_args);
 
-  // Prepare locations for block arguments.
-  SmallVector<Location> argLocs(args.size(), loc);
+  // Create the op using the rewriter (safe and RAII-compliant).
+  SDFGNode sdfg = rewriter.create<SDFGNode>(loc, nameAttr, numArgsAttr);
 
-  // Create entry block for the region.
-  rewriter.createBlock(&sdfg.getRegion(), /*insertPt=*/{}, args, argLocs);
+  // Create the region block with the desired arguments.
+  Block *body = new Block();
+  for (Type ty : args)
+    body->addArgument(ty, loc);
+  sdfg.getRegion().push_back(body);
 
   return sdfg;
 }
@@ -50,13 +56,3 @@ TypeRange SDFGNode::getArgTypes() {
     types.push_back(arg.getType());
   return types;
 }
-
-AllocSymbolOp AllocSymbolOp::create(PatternRewriter &rewriter, Location loc, StringRef sym) {
-  return rewriter.create<AllocSymbolOp>(loc, rewriter.getStringAttr(sym));
-}
-
-AllocSymbolOp AllocSymbolOp::create(Location loc, StringRef sym) {
-  OpBuilder builder(loc->getContext());
-  return builder.create<AllocSymbolOp>(loc, builder.getStringAttr(sym));
-}
-

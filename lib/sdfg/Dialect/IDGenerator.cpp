@@ -2,7 +2,7 @@
 
 /// This file contains the ID generator utility functions.
 
-#include "sdfg/Utils/IDGenerator.h"
+#include "sdfg/Dialect/IDGenerator.h"
 
 namespace mlir::sdfg::utils {
 namespace {
