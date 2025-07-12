@@ -5,7 +5,6 @@ set(LIBS
         ${conversion_libs}
         MLIROptLib
         MLIRSDFG
-        LinalgToSDFG
         TorchToSDFG
         # IREE Torch-MLIR targets
         iree::compiler::plugins::input::Torch::InputConversion

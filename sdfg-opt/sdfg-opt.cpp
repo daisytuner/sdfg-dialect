@@ -18,7 +18,6 @@
 #include "mlir/InitAllDialects.h"
 #include "torch-mlir/Dialect/Torch/IR/TorchDialect.h"
 
-#include "sdfg/Conversion/LinalgToSDFG/Passes.h"
 #include "sdfg/Conversion/TorchToSDFG/Passes.h"
 #include "sdfg/Dialect/SDFGDialect.h"
 #include "sdfg/Dialect/SDFGOpsDialect.cpp.inc"
@@ -27,7 +26,6 @@ int main(int argc, char **argv) {
   mlir::func::registerFuncPasses();
   mlir::tensor::registerTensorPasses();
 
-  mlir::sdfg::conversion::registerLinalgToSDFGPasses();
   mlir::sdfg::conversion::registerTorchToSDFGPasses();
 
   mlir::DialectRegistry registry;
