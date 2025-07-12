@@ -2,8 +2,12 @@
 #include "mlir/Conversion/LLVMCommon/Pattern.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/Parser/Parser.h"
+#include "mlir/Support/LLVM.h"
 #include "llvm/ADT/MapVector.h"
 #include "sdfg/Dialect/IDGenerator.h"
+#include "mlir/Interfaces/FunctionInterfaces.h"
+#include "mlir/Interfaces/FunctionImplementation.h"
 
 using namespace mlir;
 using namespace mlir::sdfg;
@@ -23,36 +27,60 @@ LogicalResult SDFGNode::verifySymbolUses(SymbolTableCollection &symbolTable) {
   return success();
 }
 
-SDFGNode SDFGNode::create(PatternRewriter &rewriter, Location loc,
-                          unsigned num_args, TypeRange args) {
-  // Generate a unique SDFG name from the ID.
-  std::string name = "sdfg_" + std::to_string(utils::generateID());
+SDFGNode SDFGNode::create(PatternRewriter &rewriter, Location loc, StringRef name, TypeRange inputs, TypeRange results) {
   auto nameAttr = rewriter.getStringAttr(name);
-  auto numArgsAttr = rewriter.getI32IntegerAttr(num_args);
-
-  // Create the op using the rewriter (safe and RAII-compliant).
-  SDFGNode sdfg = rewriter.create<SDFGNode>(loc, nameAttr, numArgsAttr);
-
-  // Create the region block with the desired arguments.
+  auto functionType = FunctionType::get(rewriter.getContext(), inputs, results);
+  SDFGNode sdfg = rewriter.create<SDFGNode>(loc, nameAttr, TypeAttr::get(functionType), ArrayAttr(), ArrayAttr());
   Block *body = new Block();
-  for (Type ty : args)
+  for (Type ty : inputs)
     body->addArgument(ty, loc);
   sdfg.getRegion().push_back(body);
-
   return sdfg;
 }
 
-SDFGNode SDFGNode::create(PatternRewriter &rewriter, Location loc) {
-  return create(rewriter, loc, 0, {});
+Block::BlockArgListType SDFGNode::getFunctionArgs() {
+  return getBody().getArguments();
 }
 
-Block::BlockArgListType SDFGNode::getArgs() {
-  return getBody().getArguments().take_front(getNumArgs());
+// Custom parsing and printing for named arguments
+ParseResult SDFGNode::parse(OpAsmParser &parser, OperationState &result) {
+  auto buildFuncType = [](Builder &builder, ArrayRef<Type> inputs, ArrayRef<Type> results,
+                          function_interface_impl::VariadicFlag, std::string &) {
+    return builder.getFunctionType(inputs, results);
+  };
+  return function_interface_impl::parseFunctionOp(
+      parser, result, /*allowVariadic=*/false,
+      getFunctionTypeAttrName(result.name), buildFuncType,
+      getArgAttrsAttrName(result.name), getResAttrsAttrName(result.name));
 }
 
-TypeRange SDFGNode::getArgTypes() {
-  SmallVector<Type> types;
-  for (BlockArgument arg : getArgs())
-    types.push_back(arg.getType());
-  return types;
+void SDFGNode::print(OpAsmPrinter &p) {
+  function_interface_impl::printFunctionOp(p, *this, /*isVariadic=*/false,
+                                           getFunctionTypeAttrName(),
+                                           getArgAttrsAttrName(),
+                                           getResAttrsAttrName());
+}
+
+mlir::Region* SDFGNode::getCallableRegion() const {
+    auto &body = const_cast<SDFGNode *>(this)->getBody();
+    if (body.empty())
+        return nullptr;
+    return &body;
+}
+
+mlir::ArrayRef<mlir::Type> SDFGNode::getArgumentTypes() const {
+    static thread_local llvm::SmallVector<mlir::Type, 8> storage;
+    storage.clear();
+    auto funcTy = const_cast<SDFGNode *>(this)->getFunctionType();
+    for (auto t : funcTy.getInputs())
+        storage.push_back(t);
+    return storage;
+}
+mlir::ArrayRef<mlir::Type> SDFGNode::getResultTypes() const {
+    static thread_local llvm::SmallVector<mlir::Type, 8> storage;
+    storage.clear();
+    auto funcTy = const_cast<SDFGNode *>(this)->getFunctionType();
+    for (auto t : funcTy.getResults())
+        storage.push_back(t);
+    return storage;
 }

@@ -8,6 +8,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+#include "llvm/ADT/STLExtras.h"
 
 using namespace mlir;
 using namespace sdfg;
@@ -88,10 +89,61 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
 struct TorchToSDFGPass : public sdfg::conversion::TorchToSDFGPassBase<TorchToSDFGPass> {
   void runOnOperation() override {
     ModuleOp module = getOperation();
-    RewritePatternSet patterns(&getContext());
-    patterns.add<TorchOperatorToLibraryNodePattern>(&getContext());
-    if (failed(applyPatternsAndFoldGreedily(module, std::move(patterns))))
+    MLIRContext *ctx = &getContext();
+
+    // 1. Lower torch.operator operations to sdfg.library_node.
+    RewritePatternSet patterns(ctx);
+    patterns.add<TorchOperatorToLibraryNodePattern>(ctx);
+    if (failed(applyPatternsAndFoldGreedily(module, std::move(patterns)))) {
       signalPassFailure();
+      return;
+    }
+
+    // 2. Convert func.func operations to sdfg.sdfg and their terminators to
+    //    sdfg.return.  This happens after the pattern rewrite above so that the
+    //    body of the function already contains library nodes instead of torch
+    //    operators.
+    for (auto funcOp : llvm::make_early_inc_range(module.getOps<func::FuncOp>())) {
+      // Prepare a rewriter anchored at the current func.func op.
+      PatternRewriter rewriter(ctx);
+      rewriter.setInsertionPoint(funcOp);
+
+      // Create the new sdfg.sdfg operation with the same signature and name.
+      auto funcType = funcOp.getFunctionType();
+      auto nameAttr = rewriter.getStringAttr(funcOp.getName());
+      auto typeAttr = TypeAttr::get(funcType);
+
+      // The SDFG op takes optional argument/result attribute arrays.  Forward
+      // them if they exist.
+      ArrayAttr argAttrs = funcOp.getAllArgAttrs();
+      ArrayAttr resAttrs = funcOp.getAllResultAttrs();
+
+      auto sdfgOp = rewriter.create<SDFGNode>(funcOp.getLoc(), nameAttr, typeAttr,
+                                              argAttrs ? argAttrs : ArrayAttr(),
+                                              resAttrs ? resAttrs : ArrayAttr());
+
+      // Move the entire region body from the original function into the SDFG
+      // op.  First, remove the automatically inserted empty block in the SDFG
+      // op so we can splice the original block(s) directly.
+      {
+        Region &sdfgRegion = sdfgOp.getBody();
+        if (!sdfgRegion.empty())
+          rewriter.eraseBlock(&sdfgRegion.front());
+      }
+
+      // Inline the region using the rewriter helper to maintain bookkeeping.
+      rewriter.inlineRegionBefore(funcOp.getBody(), sdfgOp.getBody(),
+                                  sdfgOp.getBody().end());
+
+      // Convert any func.return terminators inside the newly inlined region.
+      sdfgOp.walk([&](func::ReturnOp retOp) {
+        rewriter.setInsertionPoint(retOp);
+        rewriter.replaceOpWithNewOp<sdfg::ReturnOp>(retOp, retOp.getOperands());
+      });
+
+      // Finally erase the original function.
+      rewriter.eraseOp(funcOp);
+    }
   }
 };
 
