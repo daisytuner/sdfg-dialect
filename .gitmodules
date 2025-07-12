@@ -1,0 +1,3 @@
+[submodule "3rdParty/iree"]
+	path = 3rdParty/iree
+	url = git@github.com:iree-org/iree.git

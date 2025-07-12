@@ -6,6 +6,15 @@ set(LIBS
         MLIROptLib
         MLIRSDFG
         LinalgToSDFG
+        TorchToSDFG
+        # IREE Torch-MLIR targets
+        iree::compiler::plugins::input::Torch::InputConversion
+        iree::compiler::plugins::input::Torch::torch-mlir::TorchConversionDialectIR
+        iree::compiler::plugins::input::Torch::torch-mlir::TorchDialectIR
+        iree::compiler::plugins::input::Torch::torch-mlir::TorchDialectPasses
+        iree::compiler::plugins::input::Torch::torch-mlir::TorchOnnxToTorchPasses
+        iree::compiler::plugins::input::Torch::torch-mlir::ConversionPasses
+        iree::compiler::plugins::input::Torch::torch-mlir-dialects::TMTensorDialectIR
         )
 add_llvm_executable(sdfg-opt sdfg-opt.cpp)
 

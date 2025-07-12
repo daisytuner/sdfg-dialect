@@ -1,1 +1,2 @@
 add_subdirectory(LinalgToSDFG)
+add_subdirectory(TorchToSDFG)
