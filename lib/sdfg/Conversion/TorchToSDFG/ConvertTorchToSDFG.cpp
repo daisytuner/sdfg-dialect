@@ -87,9 +87,16 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
       }
     }
 
+    // If this is not a onnx. operator, do not lower
+    if (opName.find("onnx.") == std::string::npos)
+      return failure();
+
     // If this is a torch.operator "onnx.Constant", do not lower
     if (opName == "onnx.Constant")
       return failure();
+
+    // drop onnx. prefix
+    opName = opName.substr(strlen("onnx."));
 
     // Lower to sdfg.library_node
     SmallVector<Value> inputs, outputs;
