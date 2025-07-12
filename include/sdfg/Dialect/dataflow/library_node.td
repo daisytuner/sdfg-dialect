@@ -5,7 +5,12 @@
 def SDFG_LibraryNodeOp : SDFG_Op<"library_node", [AttrSizedOperandSegments]> {
   let summary     = "Library Node";
   let description = [{
-    SDFG library node
+    SDFG library node that can represent external library calls with inputs, outputs, and additional parameters.
+    The node supports:
+    - inputs: Input operands to the library function
+    - output_operands: Pre-allocated output buffers (for in-place operations)
+    - results: Return values from the library function
+    - attributes: Additional parameters specific to the library function (e.g., kernel_shape, pads, strides)
   }];
 
   let arguments = (ins

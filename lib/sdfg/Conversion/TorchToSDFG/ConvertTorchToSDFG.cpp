@@ -48,8 +48,24 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
     SmallVector<Value> inputs, outputs;
     for (auto operand : op->getOperands())
       inputs.push_back(operand);
-    for (auto result : op->getResults())
-      outputs.push_back(result);
+    // Don't add results as output operands - this creates a dominance issue
+    // The library node should only have inputs and return results
+
+    // Extract relevant attributes from the torch operator
+    SmallVector<NamedAttribute> attributes;
+    for (auto attr : op->getAttrs()) {
+      // Skip the "name" attribute as it's handled by the code field
+      if (attr.getName() == "name")
+        continue;
+      
+      // Remove 'torch.onnx.' prefix if present
+      auto nameStr = attr.getName().str();
+      StringRef nameRef = nameStr;
+      if (nameRef.starts_with("torch.onnx.")) {
+        nameRef = nameRef.drop_front(strlen("torch.onnx."));
+      }
+      attributes.push_back(NamedAttribute(mlir::StringAttr::get(op->getContext(), nameRef), attr.getValue()));
+    }
 
     // Use the opName as the code for the library node
     auto libraryNode = rewriter.create<LibraryNodeOp>(
@@ -58,6 +74,11 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
         rewriter.getStringAttr(opName),
         inputs,
         outputs);
+
+    // Add the extracted attributes to the library node
+    for (auto attr : attributes) {
+      libraryNode->setAttr(attr.getName(), attr.getValue());
+    }
 
     rewriter.replaceOp(op, libraryNode.getResults());
     return success();
