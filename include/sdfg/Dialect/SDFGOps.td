@@ -14,6 +14,7 @@ include "sdfg/Dialect/sdfg.td"
 //===----------------------------------------------------------------------===//
 
 include "sdfg/Dialect/nodes/library_node.td"
+include "sdfg/Dialect/nodes/alloca.td"
 include "sdfg/Dialect/nodes/return.td"
 
 #endif // SDFG_OPS

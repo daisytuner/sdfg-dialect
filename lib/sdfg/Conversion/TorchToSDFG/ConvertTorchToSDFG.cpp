@@ -16,6 +16,52 @@ using namespace conversion;
 
 namespace {
 
+// Lower `torch.operator "onnx.Constant"` to `sdfg.alloca` while forwarding the
+// constant payload via a `value` attribute.
+struct TorchConstantToAllocaPattern : public RewritePattern {
+  TorchConstantToAllocaPattern(MLIRContext *context)
+      : RewritePattern("torch.operator", /*benefit=*/2, context) {}
+
+  LogicalResult matchAndRewrite(Operation *op,
+                                PatternRewriter &rewriter) const override {
+    // We are only interested in `torch.operator "onnx.Constant"`.
+    if (!op->getName().getStringRef().starts_with("torch.operator"))
+      return failure();
+
+    // Extract the operator name (e.g., "onnx.Constant").  This follows the
+    // same logic as the library-node pattern below.
+    std::string opName;
+    if (auto attr = op->getAttrOfType<StringAttr>("name")) {
+      opName = attr.getValue().str();
+    } else {
+      auto opStr = op->getName().getStringRef().str();
+      auto quotePos = opStr.find('"');
+      if (quotePos != std::string::npos) {
+        auto endQuote = opStr.find('"', quotePos + 1);
+        if (endQuote != std::string::npos)
+          opName = opStr.substr(quotePos + 1, endQuote - quotePos - 1);
+      }
+    }
+
+    if (opName != "onnx.Constant")
+      return failure();
+
+    // Acquire the constant payload attribute (typically a DenseResourceAttr).
+    Attribute valueAttr = op->getAttr("torch.onnx.value");
+
+    if (!valueAttr)
+      return failure();
+
+    // Generate the `sdfg.alloca` op producing the same type as the constant.
+    Type resultType = op->getResult(0).getType();
+
+    auto alloca = rewriter.create<sdfg::AllocaOp>(op->getLoc(), resultType, valueAttr);
+
+    rewriter.replaceOp(op, alloca.getResult());
+    return success();
+  }
+};
+
 struct TorchOperatorToLibraryNodePattern : public RewritePattern {
   TorchOperatorToLibraryNodePattern(MLIRContext *context)
       : RewritePattern("torch.operator", 1, context) {}
@@ -93,7 +139,7 @@ struct TorchToSDFGPass : public sdfg::conversion::TorchToSDFGPassBase<TorchToSDF
 
     // 1. Lower torch.operator operations to sdfg.library_node.
     RewritePatternSet patterns(ctx);
-    patterns.add<TorchOperatorToLibraryNodePattern>(ctx);
+    patterns.add<TorchConstantToAllocaPattern, TorchOperatorToLibraryNodePattern>(ctx);
     if (failed(applyPatternsAndFoldGreedily(module, std::move(patterns)))) {
       signalPassFailure();
       return;
