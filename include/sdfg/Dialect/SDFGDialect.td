@@ -18,6 +18,13 @@ def SDFG_Dialect : Dialect {
         This dialect is an MLIR dialect for SDFGs.
     }];
     let cppNamespace = "::mlir::sdfg";
+    let useDefaultTypePrinterParser = 1;
+
+    // Allow separate file to register custom types.
+    let extraClassDeclaration = [{
+        /// Register custom typedefs with this dialect.
+        void registerTypes();
+    }];
 }
 
 //===----------------------------------------------------------------------===//

@@ -1,5 +1,6 @@
 #include "sdfg/Dialect/SDFGDialect.h"
 #include "sdfg/Dialect/SDFGOps.h"
+#include "sdfg/Dialect/SDFGTypes.h"
 
 using namespace mlir;
 using namespace mlir::sdfg;
@@ -13,4 +14,5 @@ void SDFGDialect::initialize() {
 #define GET_OP_LIST
 #include "sdfg/Dialect/SDFGOps.cpp.inc"
       >();
+  registerTypes();
 }

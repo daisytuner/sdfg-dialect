@@ -1,13 +1,13 @@
 // RUN: sdfg-opt --torch-to-sdfg --allow-unregistered-dialect %s | FileCheck %s
 
 // CHECK: module {
-// CHECK:   sdfg.sdfg @main(%arg0: !torch.vtensor<[1,3,224,224],f32>) -> !torch.vtensor<[1,64,55,55],f32> {
-// CHECK:     %0 = sdfg.alloca {value = dense_resource<conv1_w_0> : tensor<64x3x3x3xf32>} : !torch.vtensor<[64,3,3,3],f32>
-// CHECK:     %1 = sdfg.alloca {value = dense_resource<conv1_b_0> : tensor<64xf32>} : !torch.vtensor<[64],f32>
-// CHECK:     %2 = sdfg.library_node "Conv" ins %arg0, %0, %1 : !torch.vtensor<[1,3,224,224],f32>, !torch.vtensor<[64,3,3,3],f32>, !torch.vtensor<[64],f32> outs : -> !torch.vtensor<[1,64,111,111],f32> {kernel_shape = [3 : si64, 3 : si64], pads = [0 : si64, 0 : si64, 0 : si64, 0 : si64], strides = [2 : si64, 2 : si64]}
-// CHECK:     %3 = sdfg.library_node "Relu" ins %2 : !torch.vtensor<[1,64,111,111],f32> outs : -> !torch.vtensor<[1,64,111,111],f32>
-// CHECK:     %4 = sdfg.library_node "MaxPool" ins %3 : !torch.vtensor<[1,64,111,111],f32> outs : -> !torch.vtensor<[1,64,55,55],f32> {kernel_shape = [3 : si64, 3 : si64], pads = [0 : si64, 0 : si64, 0 : si64, 0 : si64], strides = [2 : si64, 2 : si64]}
-// CHECK:     sdfg.return %4 : !torch.vtensor<[1,64,55,55],f32>
+// CHECK:   sdfg.sdfg @main(%arg0: !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>) -> !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<55 x !sdfg.array<55 x f32>>>> {
+// CHECK:     %0 = sdfg.alloca {value = dense_resource<conv1_w_0> : tensor<64x3x3x3xf32>} : !sdfg.array<64 x !sdfg.array<3 x !sdfg.array<3 x !sdfg.array<3 x f32>>>>
+// CHECK:     %1 = sdfg.alloca {value = dense_resource<conv1_b_0> : tensor<64xf32>} : !sdfg.array<64 x f32>
+// CHECK:     %2 = sdfg.library_node "Conv" ins %arg0, %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<64 x !sdfg.array<3 x !sdfg.array<3 x !sdfg.array<3 x f32>>>>, !sdfg.array<64 x f32> outs : -> !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<111 x !sdfg.array<111 x f32>>>> {kernel_shape = [3 : si64, 3 : si64], pads = [0 : si64, 0 : si64, 0 : si64, 0 : si64], strides = [2 : si64, 2 : si64]}
+// CHECK:     %3 = sdfg.library_node "Relu" ins %2 : !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<111 x !sdfg.array<111 x f32>>>> outs : -> !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<111 x !sdfg.array<111 x f32>>>>
+// CHECK:     %4 = sdfg.library_node "MaxPool" ins %3 : !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<111 x !sdfg.array<111 x f32>>>> outs : -> !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<55 x !sdfg.array<55 x f32>>>> {kernel_shape = [3 : si64, 3 : si64], pads = [0 : si64, 0 : si64, 0 : si64, 0 : si64], strides = [2 : si64, 2 : si64]}
+// CHECK:     sdfg.return %4 : !sdfg.array<1 x !sdfg.array<64 x !sdfg.array<55 x !sdfg.array<55 x f32>>>>
 // CHECK:   }
 // CHECK: }
 

@@ -1,6 +1,7 @@
 add_mlir_dialect_library(MLIRSDFG
         SDFGDialect.cpp
         SDFGOps.cpp
+        SDFGTypes.cpp
         IDGenerator.cpp
 
         ADDITIONAL_HEADER_DIRS

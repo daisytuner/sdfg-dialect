@@ -8,6 +8,7 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/FunctionInterfaces.td"
 
 include "sdfg/Dialect/sdfg.td"
+include "sdfg/Dialect/SDFGTypes.td"
 
 //===----------------------------------------------------------------------===//
 // Nodes

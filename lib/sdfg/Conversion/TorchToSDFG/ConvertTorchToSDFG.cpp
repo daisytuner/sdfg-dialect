@@ -2,17 +2,96 @@
 #include "sdfg/Conversion/TorchToSDFG/Passes.h"
 #include "sdfg/Dialect/SDFGDialect.h"
 #include "sdfg/Dialect/SDFGOps.h"
+#include "sdfg/Dialect/SDFGTypes.h"
 
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "llvm/ADT/STLExtras.h"
+#include "torch-mlir/Dialect/Torch/IR/TorchTypes.h"
 
 using namespace mlir;
 using namespace sdfg;
 using namespace conversion;
+using namespace mlir::torch::Torch;
+
+// Helper that recursively converts a `!torch.vtensor` type with fully static
+// shape and known dtype to a nested `!sdfg.array` type.  If the conversion is
+// not possible (e.g., dynamic sizes or unknown dtype), the original type is
+// returned unchanged.
+static mlir::Type convertVTensorToArray(mlir::Type ty) {
+  auto *ctx = ty.getContext();
+  if (auto vtTy = ty.dyn_cast<ValueTensorType>()) {
+    // Only handle the fully-static case with a known dtype for now.
+    if (!vtTy.hasSizes() || !vtTy.hasDtype())
+      return ty;
+
+    llvm::ArrayRef<int64_t> sizes = *vtTy.getOptionalSizes();
+    for (int64_t sz : sizes)
+      if (sz == mlir::ShapedType::kDynamic)
+        return ty; // Dynamic dim – bail out.
+
+    mlir::Type elemTy = vtTy.getDtype();
+    // Build innermost-to-outermost nested array types.
+    for (auto it = sizes.rbegin(), e = sizes.rend(); it != e; ++it) {
+      elemTy = mlir::sdfg::ArrayType::get(ctx, static_cast<uint64_t>(*it), elemTy);
+    }
+    return elemTy;
+  }
+  return ty;
+}
+
+// Convert all vtensor types in the given module to nested sdfg.array types.
+static void convertModuleVTensorsToArrays(mlir::ModuleOp module) {
+  mlir::MLIRContext *ctx = module.getContext();
+
+  // 1. Convert block argument types.
+  module.walk([&](mlir::Block *block) {
+    for (mlir::BlockArgument arg : block->getArguments()) {
+      mlir::Type newTy = convertVTensorToArray(arg.getType());
+      if (newTy != arg.getType())
+        arg.setType(newTy);
+    }
+  });
+
+  // 2. Convert operation result types.
+  module.walk([&](mlir::Operation *op) {
+    for (mlir::Value res : op->getResults()) {
+      mlir::Type newTy = convertVTensorToArray(res.getType());
+      if (newTy != res.getType())
+        res.setType(newTy);
+    }
+
+    // Additionally, patch function-type attributes on sdfg.sdfg ops.
+    if (auto sdfgOp = llvm::dyn_cast<mlir::sdfg::SDFGNode>(op)) {
+      auto funcTyAttr = sdfgOp->getAttr("function_type").dyn_cast_or_null<mlir::TypeAttr>();
+      if (!funcTyAttr)
+        return;
+      auto funcTy = funcTyAttr.getValue().cast<mlir::FunctionType>();
+      llvm::SmallVector<mlir::Type> newInputs, newResults;
+      newInputs.reserve(funcTy.getNumInputs());
+      newResults.reserve(funcTy.getNumResults());
+      bool changed = false;
+      for (mlir::Type t : funcTy.getInputs()) {
+        mlir::Type nt = convertVTensorToArray(t);
+        newInputs.push_back(nt);
+        changed |= (nt != t);
+      }
+      for (mlir::Type t : funcTy.getResults()) {
+        mlir::Type nt = convertVTensorToArray(t);
+        newResults.push_back(nt);
+        changed |= (nt != t);
+      }
+      if (changed) {
+        auto newFuncTy = mlir::FunctionType::get(ctx, newInputs, newResults);
+        sdfgOp->setAttr("function_type", mlir::TypeAttr::get(newFuncTy));
+      }
+    }
+  });
+}
 
 namespace {
 
@@ -152,10 +231,8 @@ struct TorchToSDFGPass : public sdfg::conversion::TorchToSDFGPassBase<TorchToSDF
       return;
     }
 
-    // 2. Convert func.func operations to sdfg.sdfg and their terminators to
-    //    sdfg.return.  This happens after the pattern rewrite above so that the
-    //    body of the function already contains library nodes instead of torch
-    //    operators.
+    // 2. Convert func.func operations to sdfg.sdfg (and terminators).
+    //    See original implementation above.
     for (auto funcOp : llvm::make_early_inc_range(module.getOps<func::FuncOp>())) {
       // Prepare a rewriter anchored at the current func.func op.
       PatternRewriter rewriter(ctx);
@@ -197,6 +274,9 @@ struct TorchToSDFGPass : public sdfg::conversion::TorchToSDFGPassBase<TorchToSDF
       // Finally erase the original function.
       rewriter.eraseOp(funcOp);
     }
+
+    // 3. Finally, convert all vtensor types to sdfg.array types.
+    convertModuleVTensorsToArrays(module);
   }
 };
 
