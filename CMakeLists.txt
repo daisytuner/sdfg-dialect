@@ -11,6 +11,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Must come *before* the IREE sub-directory so the option propagates.
+set(LLVM_ENABLE_RTTI ON  CACHE BOOL "Enable RTTI in LLVM/MLIR"       FORCE)
+set(LLVM_ENABLE_EH   ON  CACHE BOOL "Enable exceptions in LLVM/MLIR" FORCE)
+
 # Add IREE to find MLIR, LLVM, Torch-MLIR
 add_subdirectory(3rdParty/iree)
 
@@ -31,13 +35,6 @@ include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
 include(HandleLLVMOptions)
-
-# Enable C++ exceptions and RTTI for all targets built in this project. This is required
-# because `sdfglib` pulls in `symengine` headers that use `throw`, which fails to compile
-# if `-fno-exceptions` is in effect (the default for LLVM/MLIR builds). Adding the flags
-# here ensures they are appended *after* LLVM's default flags, overriding `-fno-exceptions`
-# and `-fno-rtti` that might be set by `HandleLLVMOptions`.
-add_compile_options(-fexceptions -frtti)
 
 # Set up MLIR include directories properly
 set(MLIR_MAIN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/iree/third_party/llvm-project/mlir)
