@@ -178,42 +178,47 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
     opName = opName.substr(strlen("onnx."));
 
     // Lower to sdfg.library_node
-    SmallVector<Value> inputs, outputs;
+    SmallVector<Value> operands;
     for (auto operand : op->getOperands())
-      inputs.push_back(operand);
-    // Don't add results as output operands - this creates a dominance issue
-    // The library node should only have inputs and return results
+      operands.push_back(operand);
 
-    // Extract relevant attributes from the torch operator
+    // The new library_node expects exactly one result. Bail out if the source
+    // operation produces a different number of results.  Multi-result
+    // `torch.operator` cases need to be handled separately.
+    if (op->getNumResults() != 1)
+      return failure();
+
+    // Extract relevant attributes from the torch operator (excluding the
+    // builtin "name" attribute and stripping the "torch.onnx." prefix).
     SmallVector<NamedAttribute> attributes;
     for (auto attr : op->getAttrs()) {
-      // Skip the "name" attribute as it's handled by the code field
       if (attr.getName() == "name")
         continue;
-      
-      // Remove 'torch.onnx.' prefix if present
+
       auto nameStr = attr.getName().str();
       StringRef nameRef = nameStr;
       if (nameRef.starts_with("torch.onnx.")) {
         nameRef = nameRef.drop_front(strlen("torch.onnx."));
       }
-      attributes.push_back(NamedAttribute(mlir::StringAttr::get(op->getContext(), nameRef), attr.getValue()));
+
+      attributes.push_back(NamedAttribute(
+          mlir::StringAttr::get(op->getContext(), nameRef), attr.getValue()));
     }
 
-    // Use the opName as the code for the library node
+    // Use the opName as the code for the library node. The builder now takes
+    // the single result type followed by the code attribute and operand list.
     auto libraryNode = rewriter.create<LibraryNodeOp>(
         op->getLoc(),
-        op->getResultTypes(),
+        op->getResult(0).getType(),
         rewriter.getStringAttr(opName),
-        inputs,
-        outputs);
+        operands);
 
     // Add the extracted attributes to the library node
     for (auto attr : attributes) {
       libraryNode->setAttr(attr.getName(), attr.getValue());
     }
 
-    rewriter.replaceOp(op, libraryNode.getResults());
+    rewriter.replaceOp(op, libraryNode.getResult());
     return success();
   }
 };
