@@ -29,6 +29,11 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install onnx==1.17.0
 ```
 
+### Step 2: SDFGLib
+
+Build [sdfglib](https://github.com/daisytuner/sdfglib) according to its instructions and install it to some <SDFGLIB-PREFIX-PATH>.
+The library exports its cmake configurations with the installation and can simply be provided to the next build command.
+
 ### Step 2: Build
 
 ```bash
@@ -51,6 +56,8 @@ cmake -GNinja \
  -DIREE_INPUT_STABLEHLO=OFF \
  -DIREE_INPUT_TOSA=OFF \
  -DLLVM_EXTERNAL_LIT=<path-to-external-lit> \
+ -Dsdfglib_DIR=<SDFGLIB-PREFIX-PATH>/lib/cmake/sdfglib \
+ -DSymEngine_DIR=<SDFGLIB-PREFIX-PATH>/lib/cmake/symengine
  ..
 
 cmake --build . --target check-sdfg-opt

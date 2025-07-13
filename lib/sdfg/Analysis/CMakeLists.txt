@@ -1,3 +1,7 @@
+if(NOT TARGET sdfglib::sdfglib)
+    find_package(sdfglib CONFIG REQUIRED)
+endif()
+
 add_mlir_dialect_library(
   ExportSDFG
   ExportSDFG/ExportSDFG.cpp
@@ -9,4 +13,5 @@ add_mlir_dialect_library(
   LINK_LIBS PUBLIC
   MLIRIR
   MLIRSDFG
+  sdfglib::sdfglib
 ) 
