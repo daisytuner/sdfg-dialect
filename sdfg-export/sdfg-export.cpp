@@ -12,6 +12,9 @@
 #include "sdfg/Dialect/SDFGOpsDialect.cpp.inc"
 #include "sdfg/Analysis/ExportSDFG/Passes.h"
 
+#include <sdfg/codegen/dispatchers/node_dispatcher_registry.h>
+#include <sdfg/serializer/json_serializer.h>
+
 int main(int argc, char **argv) {
 
   // Register MLIR core dialects and all others.
@@ -21,6 +24,9 @@ int main(int argc, char **argv) {
 
   // Register our SDFG exporter pass.
   mlir::sdfg::analysis::registerExportSDFGPasses();
+
+  sdfg::codegen::register_default_dispatchers();
+  sdfg::serializer::register_default_serializers();
 
   return mlir::asMainReturnCode(
       mlir::MlirOptMain(argc, argv, "SDFG exporter\n", registry));
