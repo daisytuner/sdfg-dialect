@@ -165,6 +165,19 @@ static std::string mlir_value_to_name(mlir::Value value) {
   return normalize_name(tmp);
 }
 
+void sdfg_array_to_subset(const sdfg::types::Array& array, sdfg::data_flow::Subset& begin_subset, sdfg::data_flow::Subset& end_subset) {
+  auto& element_type = array.element_type();
+  auto num_elements = array.num_elements();
+
+  begin_subset.push_back(sdfg::symbolic::integer(0));
+  end_subset.push_back(num_elements);
+
+  if (element_type.type_id() == sdfg::types::TypeID::Scalar) {
+    return;
+  }
+  sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(element_type), begin_subset, end_subset);
+}
+
 struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSDFGPass> {
   void visit_alloca(sdfg::builder::StructuredSDFGBuilder& builder,
                     mlir::sdfg::AllocaOp allocaOp) {
@@ -233,17 +246,31 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
     for (auto input : inputs) {
       auto inputAccessNode = inputAccessNodes[input];
+      auto& input_type = sdfg.type(input);
 
       sdfg::data_flow::Subset begin_subset;
       sdfg::data_flow::Subset end_subset;
+      if (input_type.type_id() == sdfg::types::TypeID::Array) {
+        sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(input_type), begin_subset, end_subset);
+      } else {
+        begin_subset.push_back(sdfg::symbolic::integer(0));
+        end_subset.push_back(sdfg::symbolic::integer(0));
+      }
       builder.add_memlet(block, *inputAccessNode, "void", library_node, input, begin_subset, end_subset);
     }
 
     for (auto output : outputs) {
       auto outputAccessNode = outputAccessNodes[output];
+      auto& output_type = sdfg.type(output);
 
       sdfg::data_flow::Subset begin_subset;
       sdfg::data_flow::Subset end_subset;
+      if (output_type.type_id() == sdfg::types::TypeID::Array) {
+        sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(output_type), begin_subset, end_subset);
+      } else {
+        begin_subset.push_back(sdfg::symbolic::integer(0));
+        end_subset.push_back(sdfg::symbolic::integer(0));
+      }
       builder.add_memlet(block, library_node, output, *outputAccessNode, "void", begin_subset, end_subset);
     }
   }
