@@ -242,7 +242,7 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
       metadata[key] = value;
     }
 
-    auto& library_node = builder.add_library_node<sdfg::data_flow::MetadataNode>(block, sdfg::DebugInfo(), inputs, outputs, metadata);
+    auto& library_node = builder.add_library_node<sdfg::data_flow::MetadataNode>(block, sdfg::DebugInfo(), outputs, inputs, metadata);
 
     for (auto input : inputs) {
       auto inputAccessNode = inputAccessNodes[input];
