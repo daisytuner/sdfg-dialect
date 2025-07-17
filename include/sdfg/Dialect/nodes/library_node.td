@@ -18,12 +18,12 @@ def SDFG_LibraryNodeOp : SDFG_Op<"library_node"> {
   );
 
   let results = (outs
-    AnyType:$result
+    Variadic<AnyType>:$results
   );
 
   let hasCustomAssemblyFormat = 1;
   let assemblyFormat = [{
-    $code ` ` $operands `:` type($operands) `->` type($result) attr-dict
+    $code ` ` $operands `:` type($operands) `->` type($results) attr-dict
   }];
 }
 

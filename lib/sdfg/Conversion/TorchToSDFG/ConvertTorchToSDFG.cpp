@@ -177,17 +177,6 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
     // drop onnx. prefix
     opName = opName.substr(strlen("onnx."));
 
-    // Lower to sdfg.library_node
-    SmallVector<Value> operands;
-    for (auto operand : op->getOperands())
-      operands.push_back(operand);
-
-    // The new library_node expects exactly one result. Bail out if the source
-    // operation produces a different number of results.  Multi-result
-    // `torch.operator` cases need to be handled separately.
-    if (op->getNumResults() != 1)
-      return failure();
-
     // Extract relevant attributes from the torch operator (excluding the
     // builtin "name" attribute and stripping the "torch.onnx." prefix).
     SmallVector<NamedAttribute> attributes;
@@ -205,11 +194,16 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
           mlir::StringAttr::get(op->getContext(), nameRef), attr.getValue()));
     }
 
-    // Use the opName as the code for the library node. The builder now takes
-    // the single result type followed by the code attribute and operand list.
+    // Lower to sdfg.library_node: collect operands first.
+    SmallVector<Value> operands;
+    for (auto operand : op->getOperands())
+      operands.push_back(operand);
+
+    // Create an sdfg.library_node that can return an arbitrary number of
+    // results. Forward all result types from the original operation.
     auto libraryNode = rewriter.create<LibraryNodeOp>(
         op->getLoc(),
-        op->getResult(0).getType(),
+        op->getResultTypes(),
         rewriter.getStringAttr(opName),
         operands);
 
@@ -218,7 +212,7 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
       libraryNode->setAttr(attr.getName(), attr.getValue());
     }
 
-    rewriter.replaceOp(op, libraryNode.getResult());
+    rewriter.replaceOp(op, libraryNode->getResults());
     return success();
   }
 };
