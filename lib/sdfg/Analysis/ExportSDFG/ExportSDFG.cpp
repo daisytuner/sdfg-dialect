@@ -322,7 +322,9 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
       // simplify CFG
       sdfg::analysis::AnalysisManager analysis_manager(builder.subject());
-      sdfg::passes::Pipeline cfg_simplifier = sdfg::passes::Pipeline::controlflow_simplification();
+      sdfg::passes::Pipeline cfg_simplifier("CFG Simplifier");
+      cfg_simplifier.register_pass<sdfg::passes::BlockFusionPass>();
+      cfg_simplifier.register_pass<sdfg::passes::DeadCFGElimination>();
       cfg_simplifier.run(builder, analysis_manager);
 
       // Finish SDFG
