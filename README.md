@@ -22,6 +22,8 @@ pip install lit
 ### Step 1: IREE Dependencies
 
 ```bash
+cd 3rdParty/iree/
+
 pip install hatch
 pip install -r runtime/bindings/python/iree/runtime/build_requirements.txt
 
@@ -55,9 +57,10 @@ cmake -GNinja \
  -DPython3_EXECUTABLE="$(which python3)" \
  -DIREE_INPUT_STABLEHLO=OFF \
  -DIREE_INPUT_TOSA=OFF \
+ -DIREE_BUILD_TESTS=OFF \
  -DLLVM_EXTERNAL_LIT=<path-to-external-lit> \
  -Dsdfglib_DIR=<SDFGLIB-PREFIX-PATH>/lib/cmake/sdfglib \
- -DSymEngine_DIR=<SDFGLIB-PREFIX-PATH>/lib/cmake/symengine
+ -DSymEngine_DIR=<SDFGLIB-PREFIX-PATH>/lib/cmake/symengine \
  ..
 
 cmake --build . --target check-sdfg-opt
