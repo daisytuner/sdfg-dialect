@@ -337,7 +337,7 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
       // Serialize SDFG to JSON
       sdfg::serializer::JSONSerializer serializer;
-      auto j = serializer.serialize(sdfg);
+      auto j = serializer.serialize(*sdfg);
       std::filesystem::path sdfgPath = sdfgName + ".json";
 
       std::ofstream ofs(sdfgPath);
