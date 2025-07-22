@@ -95,6 +95,25 @@ static void convertModuleVTensorsToArrays(mlir::ModuleOp module) {
 
 namespace {
 
+// Lower `torch.constant.none` to an `sdfg.alloca` that returns a scalar whose
+// primitive type is MLIR `none` (mapped later to `PrimitiveType::Void`).
+struct TorchConstantNoneToAllocaPattern : public RewritePattern {
+  TorchConstantNoneToAllocaPattern(MLIRContext *context)
+      : RewritePattern("torch.constant.none", /*benefit=*/2, context) {}
+
+  LogicalResult matchAndRewrite(Operation *op,
+                                PatternRewriter &rewriter) const override {
+    // The op has no operands/attributes, only a single result of !torch.none
+    // Generate an sdfg.alloca with scalar type (primitive=none).
+    mlir::Type scalarTy = sdfg::ScalarType::get(op->getContext(),
+                                               mlir::NoneType::get(op->getContext()));
+
+    auto alloca = rewriter.create<sdfg::AllocaOp>(op->getLoc(), scalarTy, /*value=*/Attribute());
+    rewriter.replaceOp(op, alloca.getResult());
+    return success();
+  }
+};
+
 // Lower `torch.operator "onnx.Constant"` to `sdfg.alloca` while forwarding the
 // constant payload via a `value` attribute.
 struct TorchConstantToAllocaPattern : public RewritePattern {
@@ -224,7 +243,9 @@ struct TorchToSDFGPass : public sdfg::conversion::TorchToSDFGPassBase<TorchToSDF
 
     // 1. Lower torch.operator operations to sdfg.library_node.
     RewritePatternSet patterns(ctx);
-    patterns.add<TorchConstantToAllocaPattern, TorchOperatorToLibraryNodePattern>(ctx);
+    patterns.add<TorchConstantNoneToAllocaPattern,
+                TorchConstantToAllocaPattern,
+                TorchOperatorToLibraryNodePattern>(ctx);
     if (failed(applyPatternsAndFoldGreedily(module, std::move(patterns)))) {
       signalPassFailure();
       return;
