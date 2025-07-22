@@ -36,4 +36,28 @@ def SDFG_ArrayType : SDFG_Type<"Array"> {
   let assemblyFormat = "`<` $size ` ` `x` ` ` $elementType `>`";
 }
 
+//===----------------------------------------------------------------------===//
+// ScalarType
+//===----------------------------------------------------------------------===//
+
+def SDFG_ScalarType : SDFG_Type<"Scalar"> {
+  let mnemonic = "scalar";
+  let summary = "Scalar value with primitive element type";
+  let description = [{
+    Represents a scalar value in the SDFG dialect. The contained `primitiveType`
+    is an arbitrary MLIR scalar type (e.g. `f32`, `i64`, or `none`).
+    When the primitive type is `none`, the value denotes the absence of data
+    (analogous to Python/ONNX/Torch `None`), which maps to
+    `PrimitiveType::Void` in the SDFG type system.
+  }];
+
+  let parameters = (ins
+    "::mlir::Type":$primitiveType
+  );
+
+  let skipDefaultBuilders = 0;
+
+  let assemblyFormat = "`<` $primitiveType `>`";
+}
+
 #endif // SDFG_TYPES

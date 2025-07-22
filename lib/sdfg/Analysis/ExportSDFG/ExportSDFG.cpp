@@ -107,6 +107,19 @@ std::unique_ptr<sdfg::types::IType> mlir_type_to_sdfg_type(mlir::Type type) {
         sdfg::types::PrimitiveType::FP128);
   }
 
+  // Handle scalar types coming from the SDFG dialect itself
+  if (auto scalarTy = mlir::dyn_cast<mlir::sdfg::ScalarType>(type)) {
+    return mlir_type_to_sdfg_type(scalarTy.getPrimitiveType());
+  }
+
+  // Map the MLIR builtin none type to an SDFG void scalar.  This is used for
+  // values that originate from `torch.constant.none`.
+  if (mlir::isa<mlir::NoneType>(type)) {
+    return std::make_unique<sdfg::types::Scalar>(
+        sdfg::types::StorageType_CPU_Stack, 0, "",
+        sdfg::types::PrimitiveType::Void);
+  }
+
   // Handle SDFG one-dimensional array type
   if (auto arrayType = mlir::dyn_cast<mlir::sdfg::ArrayType>(type)) {
     auto elementType = mlir_type_to_sdfg_type(arrayType.getElementType());
