@@ -14,6 +14,7 @@
 
 #include <sdfg/builder/structured_sdfg_builder.h>
 #include <sdfg/data_flow/library_nodes/metadata_node.h>
+#include <sdfg/data_flow/library_nodes/math/math.h>
 #include <sdfg/passes/pipeline.h>
 #include <sdfg/serializer/json_serializer.h>
 #include <sdfg/visualizer/dot_visualizer.h>
@@ -201,6 +202,71 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
   }
 
   void visit_library_node(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    std::string code = libraryNodeOp.getCode().str();
+    
+    bool success = false;
+    if (code == "Relu") {
+      success = visit_relu(builder, libraryNodeOp);
+    }
+
+    if (!success) {
+      visit_metadata_node(builder, libraryNodeOp);
+    }
+  }
+
+  bool visit_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    if (libraryNodeOp.getOperands().size() != 1) {
+      return false;
+    }
+    if (libraryNodeOp.getResults().size() != 1) {
+      return false;
+    }
+
+    auto& sdfg = builder.subject();
+    auto& root = sdfg.root();
+    auto& block = builder.add_block(root);
+
+    // Define input
+    auto input = mlir_value_to_name(libraryNodeOp.getOperands()[0]);
+    auto& input_node = builder.add_access(block, input);
+
+    // Define output
+    auto output = mlir_value_to_name(libraryNodeOp.getResults()[0]);
+    auto sdfg_type = mlir_type_to_sdfg_type(libraryNodeOp.getResults()[0].getType());
+    builder.add_container(output, *sdfg_type);
+    auto& output_node = builder.add_access(block, output);
+
+    auto& library_node = static_cast<sdfg::math::ml::ReLUNode&>(builder.add_library_node<sdfg::math::ml::ReLUNode>(block, sdfg::DebugInfo(), output, input));
+
+    // Add input memlet
+    auto& input_type = sdfg.type(input);
+    sdfg::data_flow::Subset begin_subset;
+    sdfg::data_flow::Subset end_subset;
+    if (input_type.type_id() == sdfg::types::TypeID::Array) {
+      sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(input_type), begin_subset, end_subset);
+    } else {
+      begin_subset.push_back(sdfg::symbolic::integer(0));
+      end_subset.push_back(sdfg::symbolic::integer(0));
+    }
+    auto& iedge = builder.add_computational_memlet(block, input_node, library_node, input, begin_subset, end_subset);
+
+    // Add output memlet
+    auto& oedge = builder.add_computational_memlet(block, library_node, output, output_node, begin_subset, end_subset);
+
+    sdfg::analysis::AnalysisManager analysis_manager(builder.subject());
+    if (!library_node.expand(builder, analysis_manager)) {
+      builder.remove_memlet(block, iedge);
+      builder.remove_memlet(block, oedge);
+      builder.remove_node(block, library_node);
+      builder.remove_node(block, input_node);
+      builder.remove_node(block, output_node);
+      return false;
+    }
+
+    return true;
+  }
+
+  void visit_metadata_node(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     auto& sdfg = builder.subject();
     auto& root = sdfg.root();
     auto& block = builder.add_block(root);
@@ -269,7 +335,7 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
         begin_subset.push_back(sdfg::symbolic::integer(0));
         end_subset.push_back(sdfg::symbolic::integer(0));
       }
-      builder.add_memlet(block, *inputAccessNode, "void", library_node, input, begin_subset, end_subset);
+      builder.add_computational_memlet(block, *inputAccessNode, library_node, input, begin_subset, end_subset);
     }
 
     for (auto output : outputs) {
@@ -284,7 +350,7 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
         begin_subset.push_back(sdfg::symbolic::integer(0));
         end_subset.push_back(sdfg::symbolic::integer(0));
       }
-      builder.add_memlet(block, library_node, output, *outputAccessNode, "void", begin_subset, end_subset);
+      builder.add_computational_memlet(block, library_node, output, *outputAccessNode, begin_subset, end_subset);
     }
   }
 
@@ -350,7 +416,7 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
       // Serialize SDFG to JSON
       sdfg::serializer::JSONSerializer serializer;
-      auto j = serializer.serialize(sdfg);
+      auto j = serializer.serialize(*sdfg);
       std::filesystem::path sdfgPath = sdfgName + ".json";
 
       std::ofstream ofs(sdfgPath);
