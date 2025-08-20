@@ -35,7 +35,7 @@ EXPECTED_OPS = {
         "Sub": 1,
         "Gemm": 1,
         "Tanh": 1,
-        "Metadata": 144,
+        "Metadata": 132,
     },
     "darknetaa53_Opset18": {
         "Conv": 52,
@@ -66,7 +66,7 @@ EXPECTED_OPS = {
         "Div": 5,
         "Erf": 5,
         "Sub": 1,
-        "Metadata": 224,
+        "Metadata": 219,
     },
     "retinanet_resnet50_fpn_v2_Opset18": {
         "Unsqueeze": 161,
