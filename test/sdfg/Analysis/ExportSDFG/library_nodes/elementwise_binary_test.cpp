@@ -69,9 +69,9 @@ protected:
   void cleanupGeneratedFiles(const std::string& sdfgName) {
       std::filesystem::path dotPath = sdfgName + ".dot";
       std::filesystem::path jsonPath = sdfgName + ".json";
-      // if (std::filesystem::exists(dotPath)) {
-      //     std::filesystem::remove(dotPath);
-      // }
+      if (std::filesystem::exists(dotPath)) {
+          std::filesystem::remove(dotPath);
+      }
       if (std::filesystem::exists(jsonPath)) {
           std::filesystem::remove(jsonPath);
       }
@@ -99,9 +99,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("add_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.add_operation"));
 
-    auto sdfg = deserializeSDFGFile("add_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.add_operation");
     EXPECT_EQ(sdfg->name(), "add_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 3);
@@ -129,7 +129,7 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("add_operation");
+    cleanupGeneratedFiles("unknown_source.add_operation");
 }
 
 // Test Sub operation
@@ -151,9 +151,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("sub_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.sub_operation"));
 
-    auto sdfg = deserializeSDFGFile("sub_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.sub_operation");
     EXPECT_EQ(sdfg->name(), "sub_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 3);
@@ -181,7 +181,7 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("sub_operation");
+    cleanupGeneratedFiles("unknown_source.sub_operation");
 }
 
 // Test Mul operation
@@ -203,9 +203,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("mul_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.mul_operation"));
 
-    auto sdfg = deserializeSDFGFile("mul_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.mul_operation");
     EXPECT_EQ(sdfg->name(), "mul_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 3);
@@ -233,7 +233,7 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("mul_operation");
+    cleanupGeneratedFiles("unknown_source.mul_operation");
 }
 
 // Test Div operation
@@ -255,9 +255,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("div_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.div_operation"));
 
-    auto sdfg = deserializeSDFGFile("div_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.div_operation");
     EXPECT_EQ(sdfg->name(), "div_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 3);
@@ -285,7 +285,7 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("div_operation");
+    cleanupGeneratedFiles("unknown_source.div_operation");
 }
 
 // Test Pow operation
@@ -307,9 +307,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("pow_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.pow_operation"));
 
-    auto sdfg = deserializeSDFGFile("pow_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.pow_operation");
     EXPECT_EQ(sdfg->name(), "pow_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 3);
@@ -337,5 +337,5 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("pow_operation");
+    cleanupGeneratedFiles("unknown_source.pow_operation");
 }

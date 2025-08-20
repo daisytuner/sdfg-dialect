@@ -135,7 +135,21 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
   void runOnOperation() override {
     mlir::ModuleOp module = getOperation();
-
+    
+    std::string moduleName;
+    mlir::Location loc = module.getLoc();
+    if (auto fileLoc = mlir::dyn_cast<mlir::FileLineColLoc>(loc)) {
+      std::string filename = fileLoc.getFilename().str();
+      // Check if filename is valid (not empty and not just a dash)
+      if (!filename.empty() && filename != "-") {
+        moduleName = filename;
+      } else {
+        moduleName = "unknown_source";
+      }
+    } else {
+      moduleName = "unknown_source";
+    }
+    
     module.walk([&](mlir::sdfg::SDFGNode sdfgNode) {
       std::string sdfgName;
       if (auto symAttr = sdfgNode->getAttrOfType<mlir::StringAttr>("sym_name"))
@@ -177,13 +191,13 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
       sdfg::visualizer::DotVisualizer visualizer(*sdfg);
       visualizer.visualize();
-      std::filesystem::path dotPath = sdfgName + ".dot";
+      std::filesystem::path dotPath = moduleName + "." + sdfgName + ".dot";
       visualizer.writeToFile(*sdfg, &dotPath);
 
       // Serialize SDFG to JSON
       sdfg::serializer::JSONSerializer serializer;
       auto j = serializer.serialize(*sdfg);
-      std::filesystem::path sdfgPath = sdfgName + ".json";
+      std::filesystem::path sdfgPath = moduleName + "." + sdfgName + ".json";
 
       std::ofstream ofs(sdfgPath);
       if (!ofs.is_open()) {
