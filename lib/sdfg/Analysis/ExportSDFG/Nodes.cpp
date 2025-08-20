@@ -161,28 +161,6 @@ bool visit_conv(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Libra
     auto [begin_Y, end_Y] = make_full_subset(Y);
     auto& oedge_Y = builder.add_computational_memlet(block, library_node, "Y", Y_node, begin_Y, end_Y, *sdfg_type_Y);
 
-    // ---------------------------------------------------------------------
-    // Expand library node
-    // ---------------------------------------------------------------------
-    sdfg::analysis::AnalysisManager analysis_manager(builder.subject());
-    if (!library_node.expand(builder, analysis_manager)) {
-        // Clean up on failure
-        builder.remove_memlet(block, iedge_X);
-        builder.remove_memlet(block, iedge_W);
-        if (has_bias && iedge_B_ptr) {
-        builder.remove_memlet(block, *iedge_B_ptr);
-        }
-        builder.remove_memlet(block, oedge_Y);
-        builder.remove_node(block, library_node);
-        builder.remove_node(block, X_node);
-        builder.remove_node(block, W_node);
-        if (has_bias && B_node_ptr) {
-        builder.remove_node(block, *B_node_ptr);
-        }
-        builder.remove_node(block, Y_node);
-        return false;
-    }
-
     return true;
 }
 
@@ -269,16 +247,6 @@ bool visit_maxpool(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Li
       end_subset_out.push_back(sdfg::symbolic::integer(0));
     }
     auto& oedge = builder.add_computational_memlet(block, library_node, "Y", output_node, begin_subset_out, end_subset_out, *output_type);
-
-    sdfg::analysis::AnalysisManager analysis_manager(builder.subject());
-    if (!library_node.expand(builder, analysis_manager)) {
-      builder.remove_memlet(block, iedge);
-      builder.remove_memlet(block, oedge);
-      builder.remove_node(block, library_node);
-      builder.remove_node(block, input_node);
-      builder.remove_node(block, output_node);
-      return false;
-    }
 
     return true;
 }

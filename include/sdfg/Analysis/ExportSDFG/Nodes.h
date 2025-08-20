@@ -52,16 +52,6 @@ bool visit_elementwise_unary(sdfg::builder::StructuredSDFGBuilder& builder, mlir
     auto& iedge = builder.add_computational_memlet(block, input_node, library_node, "X", begin_subset, end_subset, input_type);
     auto& oedge = builder.add_computational_memlet(block, library_node, "Y", output_node, begin_subset, end_subset, *output_type);
 
-    sdfg::analysis::AnalysisManager analysis_manager(builder.subject());
-    if (!library_node.expand(builder, analysis_manager)) {
-      builder.remove_memlet(block, iedge);
-      builder.remove_memlet(block, oedge);
-      builder.remove_node(block, library_node);
-      builder.remove_node(block, input_node);
-      builder.remove_node(block, output_node);
-      return false;
-    }
-
     return true;
 }
 
@@ -110,18 +100,6 @@ bool visit_elementwise_binary(sdfg::builder::StructuredSDFGBuilder& builder, mli
 
     // Add output memlet
     auto& oedge = builder.add_computational_memlet(block, library_node, "C", output_node, begin_subset, end_subset, *output_type);
-
-    sdfg::analysis::AnalysisManager analysis_manager(builder.subject());
-    if (!library_node.expand(builder, analysis_manager)) {
-      builder.remove_memlet(block, iedge_a);
-      builder.remove_memlet(block, iedge_b);
-      builder.remove_memlet(block, oedge);
-      builder.remove_node(block, library_node);
-      builder.remove_node(block, input_node_a);
-      builder.remove_node(block, input_node_b);
-      builder.remove_node(block, output_node);
-      return false;
-    }
 
     return true;
 }
