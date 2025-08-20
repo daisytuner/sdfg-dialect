@@ -83,23 +83,41 @@ bool visit_elementwise_binary(sdfg::builder::StructuredSDFGBuilder& builder, mli
     builder.add_container(output, *output_type);
     auto& output_node = builder.add_access(block, output);
 
-    auto& library_node = dynamic_cast<sdfg::math::ml::ElementWiseBinaryNode&>(builder.add_library_node<T>(block, sdfg::DebugInfo()));
+    auto& library_node = builder.add_library_node<T>(block, sdfg::DebugInfo());
 
-    sdfg::data_flow::Subset begin_subset;
-    sdfg::data_flow::Subset end_subset;
+    sdfg::data_flow::Subset begin_subset_out;
+    sdfg::data_flow::Subset end_subset_out;
     if (output_type->type_id() == sdfg::types::TypeID::Array) {
-      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*output_type), begin_subset, end_subset);
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*output_type), begin_subset_out, end_subset_out);
     } else {
-      begin_subset.push_back(sdfg::symbolic::integer(0));
-      end_subset.push_back(sdfg::symbolic::integer(0));
+      begin_subset_out.push_back(sdfg::symbolic::integer(0));
+      end_subset_out.push_back(sdfg::symbolic::integer(0));
+    }
+
+    sdfg::data_flow::Subset begin_subset_in_a;
+    sdfg::data_flow::Subset end_subset_in_a;
+    if (input_type_a.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(input_type_a), begin_subset_in_a, end_subset_in_a);
+    } else {
+      begin_subset_in_a.push_back(sdfg::symbolic::integer(0));
+      end_subset_in_a.push_back(sdfg::symbolic::integer(0));
+    }
+
+    sdfg::data_flow::Subset begin_subset_in_b;
+    sdfg::data_flow::Subset end_subset_in_b;
+    if (input_type_b.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(input_type_b), begin_subset_in_b, end_subset_in_b);
+    } else {
+      begin_subset_in_b.push_back(sdfg::symbolic::integer(0));
+      end_subset_in_b.push_back(sdfg::symbolic::integer(0));
     }
 
     // Add input memlet
-    auto& iedge_a = builder.add_computational_memlet(block, input_node_a, library_node, "A", begin_subset, end_subset, input_type_a);
-    auto& iedge_b = builder.add_computational_memlet(block, input_node_b, library_node, "B", begin_subset, end_subset, input_type_b);
+    auto& iedge_a = builder.add_computational_memlet(block, input_node_a, library_node, "A", begin_subset_in_a, end_subset_in_a, input_type_a);
+    auto& iedge_b = builder.add_computational_memlet(block, input_node_b, library_node, "B", begin_subset_in_b, end_subset_in_b, input_type_b);
 
     // Add output memlet
-    auto& oedge = builder.add_computational_memlet(block, library_node, "C", output_node, begin_subset, end_subset, *output_type);
+    auto& oedge = builder.add_computational_memlet(block, library_node, "C", output_node, begin_subset_out, end_subset_out, *output_type);
 
     return true;
 }
@@ -120,9 +138,13 @@ bool visit_elu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Librar
 
 bool visit_erf(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
+bool visit_gemm(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
+
 bool visit_hard_sigmoid(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_leaky_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
+
+bool visit_matmul(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_maxpool(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
@@ -141,24 +163,26 @@ bool visit_sub(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Librar
 bool visit_tanh(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 const std::unordered_map<std::string, bool (*)(sdfg::builder::StructuredSDFGBuilder&, mlir::sdfg::LibraryNodeOp)> LIBRARY_NODE_VISITORS = {
-    {"Abs", visit_abs},
-    {"Add", visit_add},
-    {"Clip", visit_clip},
-    {"Conv", visit_conv},
-    {"Div", visit_div},
-    {"Dropout", visit_dropout},
-    {"Elu", visit_elu},
-    {"Erf", visit_erf},
-    {"HardSigmoid", visit_hard_sigmoid},
-    {"LeakyRelu", visit_leaky_relu},
-    {"MaxPool", visit_maxpool},
-    {"Mul", visit_mul},
-    {"Pow", visit_pow},
-    {"Relu", visit_relu},
-    {"Sigmoid", visit_sigmoid},
-    {"Sqrt", visit_sqrt},
-    {"Sub", visit_sub},
-    {"Tanh", visit_tanh},
+    {"ml::Abs", visit_abs},
+    {"ml::Add", visit_add},
+    {"ml::Clip", visit_clip},
+    {"ml::Conv", visit_conv},
+    {"ml::Div", visit_div},
+    {"ml::Dropout", visit_dropout},
+    {"ml::Elu", visit_elu},
+    {"ml::Erf", visit_erf},
+    {"ml::Gemm", visit_gemm},
+    {"ml::HardSigmoid", visit_hard_sigmoid},
+    {"ml::LeakyRelu", visit_leaky_relu},
+    {"ml::MatMul", visit_matmul},
+    {"ml::MaxPool", visit_maxpool},
+    {"ml::Mul", visit_mul},
+    {"ml::Pow", visit_pow},
+    {"ml::Relu", visit_relu},
+    {"ml::Sigmoid", visit_sigmoid},
+    {"ml::Sqrt", visit_sqrt},
+    {"ml::Sub", visit_sub},
+    {"ml::Tanh", visit_tanh},
 };
 
 } // namespace nodes

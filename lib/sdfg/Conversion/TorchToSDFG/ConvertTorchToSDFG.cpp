@@ -195,6 +195,7 @@ struct TorchOperatorToLibraryNodePattern : public RewritePattern {
 
     // drop onnx. prefix
     opName = opName.substr(strlen("onnx."));
+    opName = "ml::" + opName;
 
     // Extract relevant attributes from the torch operator (excluding the
     // builtin "name" attribute and stripping the "torch.onnx." prefix).

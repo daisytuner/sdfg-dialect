@@ -87,7 +87,7 @@ module {
   sdfg.sdfg @add_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     %1 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %2 = sdfg.library_node "Add" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %2 = sdfg.library_node "ml::Add" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -123,7 +123,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 2);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Add");
+        EXPECT_EQ(lib_node->code().value(), "ml::Add");
         found_lib_node = true;
       }
     }
@@ -139,7 +139,7 @@ module {
   sdfg.sdfg @sub_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     %1 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %2 = sdfg.library_node "Sub" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %2 = sdfg.library_node "ml::Sub" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -175,7 +175,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 2);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Sub");
+        EXPECT_EQ(lib_node->code().value(), "ml::Sub");
         found_lib_node = true;
       }
     }
@@ -191,7 +191,7 @@ module {
   sdfg.sdfg @mul_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     %1 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %2 = sdfg.library_node "Mul" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %2 = sdfg.library_node "ml::Mul" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -227,7 +227,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 2);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Mul");
+        EXPECT_EQ(lib_node->code().value(), "ml::Mul");
         found_lib_node = true;
       }
     }
@@ -243,7 +243,7 @@ module {
   sdfg.sdfg @div_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     %1 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %2 = sdfg.library_node "Div" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %2 = sdfg.library_node "ml::Div" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -279,7 +279,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 2);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Div");
+        EXPECT_EQ(lib_node->code().value(), "ml::Div");
         found_lib_node = true;
       }
     }
@@ -295,7 +295,7 @@ module {
   sdfg.sdfg @pow_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     %1 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %2 = sdfg.library_node "Pow" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %2 = sdfg.library_node "ml::Pow" %0, %1 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>, !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -331,7 +331,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 2);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Pow");
+        EXPECT_EQ(lib_node->code().value(), "ml::Pow");
         found_lib_node = true;
       }
     }

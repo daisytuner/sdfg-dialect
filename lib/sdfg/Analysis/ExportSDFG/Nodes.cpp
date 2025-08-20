@@ -180,12 +180,120 @@ bool visit_erf(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Librar
     return visit_elementwise_unary<sdfg::math::ml::ErfNode>(builder, libraryNodeOp);
 }
 
+bool visit_gemm(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    if (libraryNodeOp.getOperands().size() < 2 || libraryNodeOp.getOperands().size() > 3) {
+        return false;
+      }
+      if (libraryNodeOp.getResults().size() != 1) { 
+        return false;
+      }
+  
+      auto& sdfg = builder.subject();
+      auto& root = sdfg.root();
+      auto& block = builder.add_block(root);
+  
+      // Define input A
+      auto input_a = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[0]);
+      auto& input_type_a = builder.subject().type(input_a);
+      auto& input_node_a = builder.add_access(block, input_a);
+  
+      // Define input B
+      auto input_b = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[1]);
+      auto& input_type_b = builder.subject().type(input_b);
+      auto& input_node_b = builder.add_access(block, input_b);
+  
+      // Define input C (optional)
+      bool has_input_c = libraryNodeOp.getOperands().size() == 3;
+      sdfg::data_flow::AccessNode* input_c_node_ptr = nullptr;
+      const sdfg::types::IType* input_c_type = nullptr;
+      if (has_input_c) {
+        auto input_c = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[2]);
+        input_c_node_ptr = &builder.add_access(block, input_c);
+        input_c_type = &builder.subject().type(input_c);
+      }
+
+      // Define output
+      auto output = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getResults()[0]);
+      auto output_type = sdfg::analysis::mlir_type_to_sdfg_type(libraryNodeOp.getResults()[0].getType());
+      builder.add_container(output, *output_type); 
+      auto& output_node = builder.add_access(block, output);
+  
+      // Define attributes
+      std::string alpha = "1.0f";
+      std::string beta = "1.0f";
+      bool trans_a = false;
+      bool trans_b = false;
+      for (auto namedAttr : libraryNodeOp->getAttrs()) {
+        auto attrName = namedAttr.getName().getValue();
+        // if (attrName == "alpha") {
+        //   alpha = std::to_string(namedAttr.getValue().getF32Value());
+        // } else if (attrName == "beta") {
+        //   beta = std::to_string(namedAttr.getValue().getF32Value());
+        // } else
+        // if (attrName == "transA") {
+        //   trans_a = namedAttr.getValue().getBoolValue();
+        // } else if (attrName == "transB") {
+        //   trans_b = namedAttr.getValue().getBoolValue();
+        // }
+      }
+  
+      auto& library_node = static_cast<sdfg::math::ml::GemmNode&>(builder.add_library_node<sdfg::math::ml::GemmNode>(block, sdfg::DebugInfo(), alpha, beta, trans_a, trans_b));
+  
+      sdfg::data_flow::Subset begin_subset_in_a;
+      sdfg::data_flow::Subset end_subset_in_a;
+      if (input_type_a.type_id() == sdfg::types::TypeID::Array) {
+        sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(input_type_a), begin_subset_in_a, end_subset_in_a);
+      } else {
+        begin_subset_in_a.push_back(sdfg::symbolic::integer(0));
+        end_subset_in_a.push_back(sdfg::symbolic::integer(0));
+      }
+      builder.add_computational_memlet(block, input_node_a, library_node, "A", begin_subset_in_a, end_subset_in_a, input_type_a);
+
+      sdfg::data_flow::Subset begin_subset_in_b;
+      sdfg::data_flow::Subset end_subset_in_b;
+      if (input_type_b.type_id() == sdfg::types::TypeID::Array) {
+        sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(input_type_b), begin_subset_in_b, end_subset_in_b);
+      } else {
+        begin_subset_in_b.push_back(sdfg::symbolic::integer(0));
+        end_subset_in_b.push_back(sdfg::symbolic::integer(0));
+      }
+      builder.add_computational_memlet(block, input_node_b, library_node, "B", begin_subset_in_b, end_subset_in_b, input_type_b);
+
+      if (has_input_c) {
+        sdfg::data_flow::Subset begin_subset_in_c;
+        sdfg::data_flow::Subset end_subset_in_c;
+        if (input_c_type->type_id() == sdfg::types::TypeID::Array) {
+          sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*input_c_type), begin_subset_in_c, end_subset_in_c);
+        } else {
+          begin_subset_in_c.push_back(sdfg::symbolic::integer(0));
+          end_subset_in_c.push_back(sdfg::symbolic::integer(0));
+        }
+        builder.add_computational_memlet(block, *input_c_node_ptr, library_node, "C", begin_subset_in_c, end_subset_in_c, *input_c_type);
+      }
+    
+      sdfg::data_flow::Subset begin_subset_out;
+      sdfg::data_flow::Subset end_subset_out;
+      if (output_type->type_id() == sdfg::types::TypeID::Array) {
+        sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*output_type), begin_subset_out, end_subset_out);
+      } else {
+        begin_subset_out.push_back(sdfg::symbolic::integer(0));
+        end_subset_out.push_back(sdfg::symbolic::integer(0));
+      }
+      builder.add_computational_memlet(block, library_node, "Y", output_node, begin_subset_out, end_subset_out, *output_type);
+  
+      return true;
+}
+
 bool visit_hard_sigmoid(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     return visit_elementwise_unary<sdfg::math::ml::HardSigmoidNode>(builder, libraryNodeOp);
 }
 
 bool visit_leaky_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     return visit_elementwise_unary<sdfg::math::ml::LeakyReLUNode>(builder, libraryNodeOp);
+}
+
+bool visit_matmul(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    return visit_elementwise_binary<sdfg::math::ml::MatMulNode>(builder, libraryNodeOp);
 }
 
 bool visit_maxpool(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
