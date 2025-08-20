@@ -17,3 +17,6 @@ add_lit_testsuite(check-sdfg-opt "Running the sdfg-opt regression tests"
 set_target_properties(check-sdfg-opt PROPERTIES FOLDER "Tests")
 
 add_lit_testsuites(SDFG_OPT ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${SDFG_OPT_TEST_DEPENDS})
+
+# Add ExportSDFG Google Test suite
+add_subdirectory(sdfg/Analysis/ExportSDFG)

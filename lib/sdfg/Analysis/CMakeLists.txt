@@ -4,6 +4,7 @@ endif()
 
 add_mlir_dialect_library(
   ExportSDFG
+  ExportSDFG/Nodes.cpp
   ExportSDFG/ExportSDFG.cpp
   ADDITIONAL_HEADER_DIRS
   ${PROJECT_SOURCE_DIR}/include/sdfg/Analysis/ExportSDFG
@@ -14,4 +15,5 @@ add_mlir_dialect_library(
   MLIRIR
   MLIRSDFG
   sdfglib::sdfglib
-) 
+)
+target_compile_options(ExportSDFG PRIVATE -w)
