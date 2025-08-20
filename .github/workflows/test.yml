@@ -1,0 +1,91 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  build:
+    runs-on:
+      group: dahlia
+      labels: openmp
+    container:
+      image: daisytuner/docc-v2:latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Mark GitHub Actions workdir as safe
+        run: git config --global --add safe.directory /__w/sdfg-dialect/sdfg-dialect
+
+      - name: Python Dependencies
+        run: |
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install lit
+          pip install hatch
+      
+          cd 3rdParty/iree/
+          pip install -r runtime/bindings/python/iree/runtime/build_requirements.txt
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install onnx==1.17.0
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=clang-19 \
+            -DCMAKE_CXX_COMPILER=clang++-19 \
+            -DIREE_ENABLE_ASSERTIONS=ON \
+            -DIREE_ENABLE_SPLIT_DWARF=ON \
+            -DIREE_ENABLE_THIN_ARCHIVES=ON \
+            -DIREE_TARGET_BACKEND_DEFAULTS=OFF \
+            -DIREE_TARGET_BACKEND_LLVM_CPU=ON \
+            -DIREE_HAL_DRIVER_DEFAULTS=OFF \
+            -DIREE_HAL_DRIVER_LOCAL_SYNC=ON \
+            -DIREE_HAL_DRIVER_LOCAL_TASK=ON \
+            -DIREE_BUILD_PYTHON_BINDINGS=ON \
+            -DPython3_EXECUTABLE="$(which python3)" \
+            -DIREE_INPUT_STABLEHLO=OFF \
+            -DIREE_INPUT_TOSA=OFF \
+            -DBUILD_TESTS:BOOL=OFF \
+            -DIREE_BUILD_TESTS=OFF \
+            -DSDFGLIB_BUILD_TESTS=OFF \
+            -DLLVM_EXTERNAL_LIT="$(which lit)" \
+            ..
+
+          ninja -j$(nproc)
+
+          # Install IREE
+          . ../venv/bin/activate
+          cd ./3rdParty/iree/compiler
+          hatch build
+          pip install dist/iree_base_compiler-*.whl
+
+          cd ../runtime
+          hatch build
+          pip install dist/iree_base_runtime-*.whl
+
+      - name: Unit Tests
+        run: |
+          cd build
+
+          # Dialect and Conversion
+          cmake --build . --target check-sdfg-opt
+
+          # Test SDFG Dialect to SDFG
+          ./test/sdfg/Analysis/ExportSDFG/export_sdfg_test
+
+      - name: Integration Tests
+        run: |
+          . venv/bin/activate
+          cd test/
+          pip install pytest
+          pytest -v -s integration_test.py

@@ -52,8 +52,10 @@ cmake -GNinja \
  -DPython3_EXECUTABLE="$(which python3)" \
  -DIREE_INPUT_STABLEHLO=OFF \
  -DIREE_INPUT_TOSA=OFF \
+ -DBUILD_TESTS:BOOL=OFF \
  -DIREE_BUILD_TESTS=OFF \
- -DLLVM_EXTERNAL_LIT=<path-to-external-lit> \
+ -DSDFGLIB_BUILD_TESTS=OFF \
+ -DLLVM_EXTERNAL_LIT="$(which lit)" \
  ..
 
 cmake --build . --target check-sdfg-opt
