@@ -288,6 +288,10 @@ bool visit_hard_sigmoid(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdf
     return visit_elementwise_unary<sdfg::math::ml::HardSigmoidNode>(builder, libraryNodeOp);
 }
 
+bool visit_log_softmax(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+  return visit_reduce<sdfg::math::ml::LogSoftmaxNode>(builder, libraryNodeOp);
+}
+
 bool visit_leaky_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     return visit_elementwise_unary<sdfg::math::ml::LeakyReLUNode>(builder, libraryNodeOp);
 }
@@ -367,12 +371,20 @@ bool visit_pow(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Librar
     return visit_elementwise_binary<sdfg::math::ml::PowNode>(builder, libraryNodeOp);
 }
 
+bool visit_reduce_mean(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+  return visit_reduce<sdfg::math::ml::ReduceMeanNode>(builder, libraryNodeOp);
+}
+
 bool visit_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     return visit_elementwise_unary<sdfg::math::ml::ReLUNode>(builder, libraryNodeOp);
 }
 
 bool visit_sigmoid(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     return visit_elementwise_unary<sdfg::math::ml::SigmoidNode>(builder, libraryNodeOp);
+}
+
+bool visit_softmax(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+  return visit_reduce<sdfg::math::ml::SoftmaxNode>(builder, libraryNodeOp);
 }
 
 bool visit_sqrt(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
