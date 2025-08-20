@@ -139,7 +139,13 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
     std::string moduleName;
     mlir::Location loc = module.getLoc();
     if (auto fileLoc = mlir::dyn_cast<mlir::FileLineColLoc>(loc)) {
-      moduleName = fileLoc.getFilename().str();
+      std::string filename = fileLoc.getFilename().str();
+      // Check if filename is valid (not empty and not just a dash)
+      if (!filename.empty() && filename != "-") {
+        moduleName = filename;
+      } else {
+        moduleName = "unknown_source";
+      }
     } else {
       moduleName = "unknown_source";
     }

@@ -99,9 +99,9 @@ module {
     EXPECT_TRUE(succeeded(result));
     
     // Check if files were generated
-    EXPECT_TRUE(checkSDFGFilesGenerated("return_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.return_operation"));
     
-    auto sdfg = deserializeSDFGFile("return_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.return_operation");
     EXPECT_EQ(sdfg->name(), "return_operation");
 
     EXPECT_EQ(sdfg->root().size(), 1);
@@ -109,7 +109,7 @@ module {
     EXPECT_NE(return_node, nullptr);
 
     // Clean up
-    cleanupGeneratedFiles("return_operation");
+    cleanupGeneratedFiles("unknown_source.return_operation");
 }
 
 // Test alloca operation
@@ -129,9 +129,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("alloca_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.alloca_operation"));
 
-    auto sdfg = deserializeSDFGFile("alloca_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.alloca_operation");
     EXPECT_EQ(sdfg->name(), "alloca_operation");
 
     EXPECT_EQ(sdfg->containers().size(), 1);
@@ -143,5 +143,5 @@ module {
     auto return_node = dynamic_cast<::sdfg::structured_control_flow::Return*>(&sdfg->root().at(0).first);
     EXPECT_NE(return_node, nullptr);
 
-    cleanupGeneratedFiles("alloca_operation");
+    cleanupGeneratedFiles("unknown_source.alloca_operation");
 }

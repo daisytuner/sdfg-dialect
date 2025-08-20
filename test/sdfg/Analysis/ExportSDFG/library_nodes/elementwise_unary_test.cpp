@@ -69,9 +69,9 @@ protected:
   void cleanupGeneratedFiles(const std::string& sdfgName) {
       std::filesystem::path dotPath = sdfgName + ".dot";
       std::filesystem::path jsonPath = sdfgName + ".json";
-      // if (std::filesystem::exists(dotPath)) {
-      //     std::filesystem::remove(dotPath);
-      // }
+      if (std::filesystem::exists(dotPath)) {
+          std::filesystem::remove(dotPath);
+      }
       if (std::filesystem::exists(jsonPath)) {
           std::filesystem::remove(jsonPath);
       }
@@ -98,9 +98,9 @@ sdfg.sdfg @abs_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("abs_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.abs_operation"));
 
-  auto sdfg = deserializeSDFGFile("abs_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.abs_operation");
   EXPECT_EQ(sdfg->name(), "abs_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -127,7 +127,7 @@ sdfg.sdfg @abs_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("abs_operation");
+  cleanupGeneratedFiles("unknown_source.abs_operation");
 }
 
 // Test Clip operation
@@ -148,9 +148,9 @@ sdfg.sdfg @clip_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("clip_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.clip_operation"));
 
-  auto sdfg = deserializeSDFGFile("clip_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.clip_operation");
   EXPECT_EQ(sdfg->name(), "clip_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -177,7 +177,7 @@ sdfg.sdfg @clip_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("clip_operation");
+  cleanupGeneratedFiles("unknown_source.clip_operation");
 }
 
 // Test Elu operation
@@ -198,9 +198,9 @@ sdfg.sdfg @elu_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("elu_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.elu_operation"));
 
-  auto sdfg = deserializeSDFGFile("elu_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.elu_operation");
   EXPECT_EQ(sdfg->name(), "elu_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -227,7 +227,7 @@ sdfg.sdfg @elu_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("elu_operation");
+  cleanupGeneratedFiles("unknown_source.elu_operation");
 }
 
 // Test Erf operation
@@ -248,9 +248,9 @@ sdfg.sdfg @erf_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("erf_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.erf_operation"));
 
-  auto sdfg = deserializeSDFGFile("erf_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.erf_operation");
   EXPECT_EQ(sdfg->name(), "erf_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -277,7 +277,7 @@ sdfg.sdfg @erf_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("erf_operation");
+  cleanupGeneratedFiles("unknown_source.erf_operation");
 }
 
 // Test HardSigmoid operation
@@ -298,9 +298,9 @@ sdfg.sdfg @hard_sigmoid_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("hard_sigmoid_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.hard_sigmoid_operation"));
 
-  auto sdfg = deserializeSDFGFile("hard_sigmoid_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.hard_sigmoid_operation");
   EXPECT_EQ(sdfg->name(), "hard_sigmoid_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -327,7 +327,7 @@ sdfg.sdfg @hard_sigmoid_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("hard_sigmoid_operation");
+  cleanupGeneratedFiles("unknown_source.hard_sigmoid_operation");
 }
 
 // Test LeakyReLU operation
@@ -348,9 +348,9 @@ sdfg.sdfg @leaky_relu_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("leaky_relu_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.leaky_relu_operation"));
 
-  auto sdfg = deserializeSDFGFile("leaky_relu_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.leaky_relu_operation");
   EXPECT_EQ(sdfg->name(), "leaky_relu_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -377,7 +377,7 @@ sdfg.sdfg @leaky_relu_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("leaky_relu_operation");
+  cleanupGeneratedFiles("unknown_source.leaky_relu_operation");
 }
 
 // Test ReLU operation
@@ -398,9 +398,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("relu_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.relu_operation"));
 
-    auto sdfg = deserializeSDFGFile("relu_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.relu_operation");
     EXPECT_EQ(sdfg->name(), "relu_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 2);
@@ -427,7 +427,7 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("relu_operation");
+    cleanupGeneratedFiles("unknown_source.relu_operation");
 }
 
 // Test Sigmoid operation
@@ -448,9 +448,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("sigmoid_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.sigmoid_operation"));
 
-    auto sdfg = deserializeSDFGFile("sigmoid_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.sigmoid_operation");
     EXPECT_EQ(sdfg->name(), "sigmoid_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 2);
@@ -477,7 +477,7 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("sigmoid_operation");
+    cleanupGeneratedFiles("unknown_source.sigmoid_operation");
 }
 
 // Test Sqrt operation
@@ -498,9 +498,9 @@ sdfg.sdfg @sqrt_operation() {
   auto result = runExportSDFGPass(*module);
   EXPECT_TRUE(succeeded(result));
   
-  EXPECT_TRUE(checkSDFGFilesGenerated("sqrt_operation"));
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.sqrt_operation"));
 
-  auto sdfg = deserializeSDFGFile("sqrt_operation");
+  auto sdfg = deserializeSDFGFile("unknown_source.sqrt_operation");
   EXPECT_EQ(sdfg->name(), "sqrt_operation");
   EXPECT_EQ(sdfg->root().size(), 2);
   EXPECT_EQ(sdfg->containers().size(), 2);
@@ -527,7 +527,7 @@ sdfg.sdfg @sqrt_operation() {
   }
   EXPECT_TRUE(found_lib_node);
 
-  cleanupGeneratedFiles("sqrt_operation");
+  cleanupGeneratedFiles("unknown_source.sqrt_operation");
 }
 
 // Test Tanh operation
@@ -548,9 +548,9 @@ module {
     auto result = runExportSDFGPass(*module);
     EXPECT_TRUE(succeeded(result));
     
-    EXPECT_TRUE(checkSDFGFilesGenerated("tanh_operation"));
+    EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.tanh_operation"));
 
-    auto sdfg = deserializeSDFGFile("tanh_operation");
+    auto sdfg = deserializeSDFGFile("unknown_source.tanh_operation");
     EXPECT_EQ(sdfg->name(), "tanh_operation");
     EXPECT_EQ(sdfg->root().size(), 2);
     EXPECT_EQ(sdfg->containers().size(), 2);
@@ -577,5 +577,5 @@ module {
     }
     EXPECT_TRUE(found_lib_node);
 
-    cleanupGeneratedFiles("tanh_operation");
+    cleanupGeneratedFiles("unknown_source.tanh_operation");
 }
