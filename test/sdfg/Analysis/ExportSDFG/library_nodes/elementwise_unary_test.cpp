@@ -86,7 +86,7 @@ TEST_F(ElementwiseUnaryTest, AbsOperation) {
 module {
 sdfg.sdfg @abs_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "Abs" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::Abs" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -121,7 +121,7 @@ sdfg.sdfg @abs_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "Abs");
+      EXPECT_EQ(lib_node->code().value(), "ml::Abs");
       found_lib_node = true;
     }
   }
@@ -136,7 +136,7 @@ TEST_F(ElementwiseUnaryTest, ClipOperation) {
 module {
 sdfg.sdfg @clip_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "Clip" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::Clip" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -171,7 +171,7 @@ sdfg.sdfg @clip_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "Clip");
+      EXPECT_EQ(lib_node->code().value(), "ml::Clip");
       found_lib_node = true;
     }
   }
@@ -186,7 +186,7 @@ TEST_F(ElementwiseUnaryTest, EluOperation) {
 module {
 sdfg.sdfg @elu_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "Elu" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::Elu" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -221,7 +221,7 @@ sdfg.sdfg @elu_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "Elu");
+      EXPECT_EQ(lib_node->code().value(), "ml::Elu");
       found_lib_node = true;
     }
   }
@@ -236,7 +236,7 @@ TEST_F(ElementwiseUnaryTest, ErfOperation) {
 module {
 sdfg.sdfg @erf_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "Erf" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::Erf" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -271,7 +271,7 @@ sdfg.sdfg @erf_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "Erf");
+      EXPECT_EQ(lib_node->code().value(), "ml::Erf");
       found_lib_node = true;
     }
   }
@@ -286,7 +286,7 @@ TEST_F(ElementwiseUnaryTest, HardSigmoidOperation) {
 module {
 sdfg.sdfg @hard_sigmoid_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "HardSigmoid" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::HardSigmoid" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -321,7 +321,7 @@ sdfg.sdfg @hard_sigmoid_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "HardSigmoid");
+      EXPECT_EQ(lib_node->code().value(), "ml::HardSigmoid");
       found_lib_node = true;
     }
   }
@@ -336,7 +336,7 @@ TEST_F(ElementwiseUnaryTest, LeakyReluOperation) {
 module {
 sdfg.sdfg @leaky_relu_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "LeakyRelu" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::LeakyRelu" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -371,7 +371,7 @@ sdfg.sdfg @leaky_relu_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "LeakyReLU");
+      EXPECT_EQ(lib_node->code().value(), "ml::LeakyReLU");
       found_lib_node = true;
     }
   }
@@ -386,7 +386,7 @@ TEST_F(ElementwiseUnaryTest, ReluOperation) {
 module {
   sdfg.sdfg @relu_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %1 = sdfg.library_node "Relu" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %1 = sdfg.library_node "ml::Relu" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -421,7 +421,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 1);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "ReLU");
+        EXPECT_EQ(lib_node->code().value(), "ml::ReLU");
         found_lib_node = true;
       }
     }
@@ -436,7 +436,7 @@ TEST_F(ElementwiseUnaryTest, SigmoidOperation) {
 module {
   sdfg.sdfg @sigmoid_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %1 = sdfg.library_node "Sigmoid" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %1 = sdfg.library_node "ml::Sigmoid" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -471,7 +471,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 1);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Sigmoid");
+        EXPECT_EQ(lib_node->code().value(), "ml::Sigmoid");
         found_lib_node = true;
       }
     }
@@ -486,7 +486,7 @@ TEST_F(ElementwiseUnaryTest, SqrtOperation) {
 module {
 sdfg.sdfg @sqrt_operation() {
   %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-  %1 = sdfg.library_node "Sqrt" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+  %1 = sdfg.library_node "ml::Sqrt" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
   sdfg.return
 }
 }
@@ -521,7 +521,7 @@ sdfg.sdfg @sqrt_operation() {
       EXPECT_FALSE(found_lib_node);
       EXPECT_EQ(graph.in_degree(*lib_node), 1);
       EXPECT_EQ(graph.out_degree(*lib_node), 1);
-      EXPECT_EQ(lib_node->code().value(), "Sqrt");
+      EXPECT_EQ(lib_node->code().value(), "ml::Sqrt");
       found_lib_node = true;
     }
   }
@@ -536,7 +536,7 @@ TEST_F(ElementwiseUnaryTest, TanhOperation) {
 module {
   sdfg.sdfg @tanh_operation() {
     %0 = sdfg.alloca : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
-    %1 = sdfg.library_node "Tanh" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
+    %1 = sdfg.library_node "ml::Tanh" %0 : !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>> -> !sdfg.array<1 x !sdfg.array<3 x !sdfg.array<224 x !sdfg.array<224 x f32>>>>
     sdfg.return
   }
 }
@@ -571,7 +571,7 @@ module {
         EXPECT_FALSE(found_lib_node);
         EXPECT_EQ(graph.in_degree(*lib_node), 1);
         EXPECT_EQ(graph.out_degree(*lib_node), 1);
-        EXPECT_EQ(lib_node->code().value(), "Tanh");
+        EXPECT_EQ(lib_node->code().value(), "ml::Tanh");
         found_lib_node = true;
       }
     }

@@ -14,6 +14,7 @@ set(EXPORTSDFG_TEST_FILES
     operations_test.cpp
     library_nodes/elementwise_unary_test.cpp
     library_nodes/elementwise_binary_test.cpp
+    library_nodes/reductions_test.cpp
 )
 
 add_executable(export_sdfg_test ${EXPORTSDFG_TEST_FILES})

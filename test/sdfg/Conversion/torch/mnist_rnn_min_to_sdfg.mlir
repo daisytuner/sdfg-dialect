@@ -7,7 +7,7 @@
 // CHECK:     %[[NONE:.*]] = sdfg.alloca : !sdfg.scalar<none>
 // CHECK:     %[[W:.*]] = sdfg.alloca {value = dense_resource<w> : tensor<1x16x3xf32>} : !sdfg.array<1 x  !sdfg.array<16 x  !sdfg.array<3 x  f32>>>
 // CHECK:     %[[R:.*]] = sdfg.alloca {value = dense_resource<r> : tensor<1x16x4xf32>} : !sdfg.array<1 x  !sdfg.array<16 x  !sdfg.array<4 x  f32>>>
-// CHECK:     %[[OUT:.*]]:3 = sdfg.library_node "LSTM"  %arg0, %[[W]], %[[R]], %[[NONE]] : {{.*}} {hidden_size = 4 : si64}
+// CHECK:     %[[OUT:.*]]:3 = sdfg.library_node "ml::LSTM"  %arg0, %[[W]], %[[R]], %[[NONE]] : {{.*}} {hidden_size = 4 : si64}
 // CHECK:     sdfg.return %[[OUT]]#0 : !sdfg.array<4 x  !sdfg.array<1 x  !sdfg.array<4 x  f32>>>
 // CHECK:   }
 // CHECK: }

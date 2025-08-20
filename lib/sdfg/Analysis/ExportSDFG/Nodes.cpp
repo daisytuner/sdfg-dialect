@@ -188,6 +188,10 @@ bool visit_leaky_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg:
     return visit_elementwise_unary<sdfg::math::ml::LeakyReLUNode>(builder, libraryNodeOp);
 }
 
+bool visit_matmul(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    return visit_elementwise_binary<sdfg::math::ml::MatMulNode>(builder, libraryNodeOp);
+}
+
 bool visit_maxpool(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
     if (libraryNodeOp.getOperands().size() != 1) {
       return false;
