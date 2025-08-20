@@ -1,3 +1,6 @@
 [submodule "3rdParty/iree"]
 	path = 3rdParty/iree
 	url = git@github.com:iree-org/iree.git
+[submodule "3rdParty/sdfglib"]
+	path = 3rdParty/sdfglib
+	url = git@github.com:daisytuner/sdfglib.git
