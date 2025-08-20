@@ -138,3 +138,63 @@ module {
 
     cleanupGeneratedFiles("unknown_source.matmul_operation");
 }
+
+// Test Gemm operation
+TEST_F(ReductionsTest, GemmOperation) {
+  const std::string mlirStr = R"(
+module {
+sdfg.sdfg @gemm_operation() {
+  %0 = sdfg.alloca : !sdfg.array<32 x !sdfg.array<16 x f32>>
+  %1 = sdfg.alloca : !sdfg.array<16 x !sdfg.array<64 x f32>>
+  %2 = sdfg.library_node "ml::Gemm" %0, %1 : !sdfg.array<32 x !sdfg.array<16 x f32>>, !sdfg.array<16 x !sdfg.array<64 x f32>> -> !sdfg.array<32 x !sdfg.array<64 x f32>>
+  sdfg.return
+}
+}
+)";
+
+  auto module = parseMLIR(mlirStr);
+  ASSERT_TRUE(module);
+  
+  auto result = runExportSDFGPass(*module);
+  EXPECT_TRUE(succeeded(result));
+  
+  EXPECT_TRUE(checkSDFGFilesGenerated("unknown_source.gemm_operation"));
+
+  auto sdfg = deserializeSDFGFile("unknown_source.gemm_operation");
+  EXPECT_EQ(sdfg->name(), "gemm_operation");
+  EXPECT_EQ(sdfg->root().size(), 2);
+  EXPECT_EQ(sdfg->containers().size(), 3);
+  EXPECT_TRUE(sdfg->exists("_0"));
+  EXPECT_TRUE(sdfg->exists("_1"));
+  EXPECT_TRUE(sdfg->exists("_2"));
+
+  auto& root = sdfg->root();
+  auto block = dynamic_cast<::sdfg::structured_control_flow::Block*>(&root.at(0).first);
+  EXPECT_NE(block, nullptr);
+
+  auto& graph = block->dataflow();
+  EXPECT_EQ(graph.nodes().size(), 4);
+  EXPECT_EQ(graph.edges().size(), 3);
+
+  bool found_lib_node = false;
+  for (auto& node : graph.nodes()) {
+    if (auto lib_node = dynamic_cast<::sdfg::data_flow::LibraryNode*>(&node)) {
+      EXPECT_FALSE(found_lib_node);
+      EXPECT_EQ(graph.in_degree(*lib_node), 2);
+      EXPECT_EQ(graph.out_degree(*lib_node), 1);
+      EXPECT_EQ(lib_node->code().value(), "ml::Gemm");
+
+      auto& oedge = *graph.out_edges(*lib_node).begin();
+      EXPECT_EQ(oedge.src_conn(), "Y");
+      EXPECT_EQ(oedge.end_subset().size(), 2);
+      EXPECT_TRUE(::sdfg::symbolic::eq(oedge.end_subset().at(0), ::sdfg::symbolic::integer(32)));
+      EXPECT_TRUE(::sdfg::symbolic::eq(oedge.end_subset().at(1), ::sdfg::symbolic::integer(64)));
+
+      found_lib_node = true;
+    }
+  }
+  EXPECT_TRUE(found_lib_node);
+
+  cleanupGeneratedFiles("unknown_source.gemm_operation");
+}
+

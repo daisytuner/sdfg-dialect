@@ -138,6 +138,8 @@ bool visit_elu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Librar
 
 bool visit_erf(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
+bool visit_gemm(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
+
 bool visit_hard_sigmoid(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_leaky_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
@@ -169,6 +171,7 @@ const std::unordered_map<std::string, bool (*)(sdfg::builder::StructuredSDFGBuil
     {"ml::Dropout", visit_dropout},
     {"ml::Elu", visit_elu},
     {"ml::Erf", visit_erf},
+    {"ml::Gemm", visit_gemm},
     {"ml::HardSigmoid", visit_hard_sigmoid},
     {"ml::LeakyRelu", visit_leaky_relu},
     {"ml::MatMul", visit_matmul},
