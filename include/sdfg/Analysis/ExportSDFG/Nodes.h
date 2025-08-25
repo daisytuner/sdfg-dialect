@@ -113,11 +113,11 @@ bool visit_elementwise_binary(sdfg::builder::StructuredSDFGBuilder& builder, mli
     }
 
     // Add input memlet
-    auto& iedge_a = builder.add_computational_memlet(block, input_node_a, library_node, "A", begin_subset_in_a, end_subset_in_a, input_type_a);
-    auto& iedge_b = builder.add_computational_memlet(block, input_node_b, library_node, "B", begin_subset_in_b, end_subset_in_b, input_type_b);
+    builder.add_computational_memlet(block, input_node_a, library_node, "A", begin_subset_in_a, end_subset_in_a, input_type_a);
+    builder.add_computational_memlet(block, input_node_b, library_node, "B", begin_subset_in_b, end_subset_in_b, input_type_b);
 
     // Add output memlet
-    auto& oedge = builder.add_computational_memlet(block, library_node, "C", output_node, begin_subset_out, end_subset_out, *output_type);
+    builder.add_computational_memlet(block, library_node, "C", output_node, begin_subset_out, end_subset_out, *output_type);
 
     return true;
 }
@@ -177,8 +177,8 @@ bool visit_reduce(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Lib
     end_subset_in.push_back(sdfg::symbolic::integer(0));
   }
 
-  auto& iedge = builder.add_computational_memlet(block, input_node, library_node, "input", begin_subset_in, end_subset_in, input_type);
-  auto& oedge = builder.add_computational_memlet(block, library_node, "output", output_node, begin_subset_out, end_subset_out, *output_type);
+  builder.add_computational_memlet(block, input_node, library_node, "input", begin_subset_in, end_subset_in, input_type);
+  builder.add_computational_memlet(block, library_node, "output", output_node, begin_subset_out, end_subset_out, *output_type);
 
   return true;
 }
@@ -186,6 +186,8 @@ bool visit_reduce(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Lib
 bool visit_abs(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_add(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
+
+bool visit_batch_normalization(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_clip(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
@@ -202,6 +204,8 @@ bool visit_erf(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Librar
 bool visit_gemm(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_hard_sigmoid(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
+
+bool visit_layer_normalization(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
 bool visit_leaky_relu(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp);
 
@@ -232,6 +236,7 @@ bool visit_tanh(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Libra
 const std::unordered_map<std::string, bool (*)(sdfg::builder::StructuredSDFGBuilder&, mlir::sdfg::LibraryNodeOp)> LIBRARY_NODE_VISITORS = {
     {"ml::Abs", visit_abs},
     {"ml::Add", visit_add},
+    {"ml::BatchNormalization", visit_batch_normalization},
     {"ml::Clip", visit_clip},
     {"ml::Conv", visit_conv},
     {"ml::Div", visit_div},
@@ -240,6 +245,7 @@ const std::unordered_map<std::string, bool (*)(sdfg::builder::StructuredSDFGBuil
     {"ml::Erf", visit_erf},
     {"ml::Gemm", visit_gemm},
     {"ml::HardSigmoid", visit_hard_sigmoid},
+    {"ml::LayerNormalization", visit_layer_normalization},
     {"ml::LeakyRelu", visit_leaky_relu},
     {"ml::LogSoftmax", visit_log_softmax},
     {"ml::MatMul", visit_matmul},

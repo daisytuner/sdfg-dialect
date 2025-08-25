@@ -399,6 +399,280 @@ bool visit_tanh(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::Libra
     return visit_elementwise_unary<sdfg::math::ml::TanhNode>(builder, libraryNodeOp);
 }
 
+bool visit_layer_normalization(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    // Expect 2 (input + scale) or 3 (input + scale + bias) operands
+    size_t numOperands = libraryNodeOp.getOperands().size();
+    if (numOperands < 2 || numOperands > 3) {
+        return false;
+    }
+    if (libraryNodeOp.getResults().size() != 1) {
+        return false;
+    }
+
+    auto& sdfg = builder.subject();
+    auto& root = sdfg.root();
+    auto& block = builder.add_block(root);
+
+    // ---------------------------------------------------------------------
+    // Define input (X)
+    // ---------------------------------------------------------------------
+    auto X = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[0]);
+    auto& sdfg_type_X = builder.subject().type(X);
+    auto& X_node = builder.add_access(block, X);
+
+    // ---------------------------------------------------------------------
+    // Define scale (Scale)
+    // ---------------------------------------------------------------------
+    auto Scale = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[1]);
+    auto& sdfg_type_Scale = builder.subject().type(Scale);
+    auto& Scale_node = builder.add_access(block, Scale);
+
+    // ---------------------------------------------------------------------
+    // Optional bias (B)
+    // ---------------------------------------------------------------------
+    bool has_bias = (numOperands == 3);
+    sdfg::data_flow::AccessNode* B_node_ptr = nullptr;
+    const sdfg::types::IType* sdfg_type_B = nullptr;
+    if (has_bias) {
+        auto B = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[2]);
+        B_node_ptr = &builder.add_access(block, B);
+        sdfg_type_B = &builder.subject().type(B);
+    }
+
+    // ---------------------------------------------------------------------
+    // Define output (Y)
+    // ---------------------------------------------------------------------
+    auto Y = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getResults()[0]);
+    auto sdfg_type_Y = sdfg::analysis::mlir_type_to_sdfg_type(libraryNodeOp.getResults()[0].getType());
+    builder.add_container(Y, *sdfg_type_Y);
+    auto& Y_node = builder.add_access(block, Y);
+
+    // ---------------------------------------------------------------------
+    // Parse layer normalization attributes
+    // ---------------------------------------------------------------------
+    int axis = -1;
+    std::string epsilon = "0.00001f";
+    for (auto namedAttr : libraryNodeOp->getAttrs()) {
+      auto attrName = namedAttr.getName().getValue();
+      if (attrName == "axis") {
+        if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(namedAttr.getValue())) {
+          axis = static_cast<int>(intAttr.getValue().getSExtValue());
+        }
+      } else if (attrName == "epsilon") {
+        if (auto stringAttr = mlir::dyn_cast<mlir::StringAttr>(namedAttr.getValue())) {
+          epsilon = stringAttr.getValue().str();
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Create layer normalization node
+    // ---------------------------------------------------------------------
+    auto& library_node = builder.add_library_node<sdfg::math::ml::LayerNormalizationNode>(
+        block, sdfg::DebugInfo(), axis, epsilon
+    );
+
+    // ---------------------------------------------------------------------
+    // Connect inputs
+    // ---------------------------------------------------------------------
+    sdfg::data_flow::Subset begin_X;
+    sdfg::data_flow::Subset end_X;
+    if (sdfg_type_X.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_X), begin_X, end_X);
+    } else {
+      begin_X.push_back(sdfg::symbolic::integer(0));
+      end_X.push_back(sdfg::symbolic::integer(0));
+    }
+    auto& iedge_X = builder.add_computational_memlet(block, X_node, library_node, "X", begin_X, end_X, sdfg_type_X);
+
+    sdfg::data_flow::Subset begin_Scale;
+    sdfg::data_flow::Subset end_Scale;
+    if (sdfg_type_Scale.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_Scale), begin_Scale, end_Scale);
+    } else {
+      begin_Scale.push_back(sdfg::symbolic::integer(0));
+      end_Scale.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, Scale_node, library_node, "Scale", begin_Scale, end_Scale, sdfg_type_Scale);
+
+    if (has_bias) {
+        sdfg::data_flow::Subset begin_B;
+        sdfg::data_flow::Subset end_B;
+        if (sdfg_type_B->type_id() == sdfg::types::TypeID::Array) {
+          sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*sdfg_type_B), begin_B, end_B);
+        } else {
+          begin_B.push_back(sdfg::symbolic::integer(0));
+          end_B.push_back(sdfg::symbolic::integer(0));
+        }
+        builder.add_computational_memlet(block, *B_node_ptr, library_node, "B", begin_B, end_B, *sdfg_type_B);
+    }
+
+    // ---------------------------------------------------------------------
+    // Connect output
+    // ---------------------------------------------------------------------
+    sdfg::data_flow::Subset begin_Y;
+    sdfg::data_flow::Subset end_Y;
+    if (sdfg_type_Y->type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*sdfg_type_Y), begin_Y, end_Y);
+    } else {
+      begin_Y.push_back(sdfg::symbolic::integer(0));
+      end_Y.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, library_node, "Y", Y_node, begin_Y, end_Y, *sdfg_type_Y);
+
+    return true;
+}
+
+bool visit_batch_normalization(sdfg::builder::StructuredSDFGBuilder& builder, mlir::sdfg::LibraryNodeOp libraryNodeOp) {
+    // Expect 5 operands: input, scale, bias, mean, variance
+    if (libraryNodeOp.getOperands().size() != 5) {
+        return false;
+    }
+    if (libraryNodeOp.getResults().size() != 1) {
+        return false;
+    }
+
+    auto& sdfg = builder.subject();
+    auto& root = sdfg.root();
+    auto& block = builder.add_block(root);
+
+    // ---------------------------------------------------------------------
+    // Define input (X)
+    // ---------------------------------------------------------------------
+    auto X = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[0]);
+    auto& sdfg_type_X = builder.subject().type(X);
+    auto& X_node = builder.add_access(block, X);
+
+    // ---------------------------------------------------------------------
+    // Define scale (Scale)
+    // ---------------------------------------------------------------------
+    auto Scale = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[1]);
+    auto& sdfg_type_Scale = builder.subject().type(Scale);
+    auto& Scale_node = builder.add_access(block, Scale);
+
+    // ---------------------------------------------------------------------
+    // Define bias (B)
+    // ---------------------------------------------------------------------
+    auto B = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[2]);
+    auto& sdfg_type_B = builder.subject().type(B);
+    auto& B_node = builder.add_access(block, B);
+
+    // ---------------------------------------------------------------------
+    // Define mean (input_mean)
+    // ---------------------------------------------------------------------
+    auto Mean = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[3]);
+    auto& sdfg_type_Mean = builder.subject().type(Mean);
+    auto& Mean_node = builder.add_access(block, Mean);
+
+    // ---------------------------------------------------------------------
+    // Define variance (input_var)
+    // ---------------------------------------------------------------------
+    auto Var = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getOperands()[4]);
+    auto& sdfg_type_Var = builder.subject().type(Var);
+    auto& Var_node = builder.add_access(block, Var);
+
+    // ---------------------------------------------------------------------
+    // Define output (Y)
+    // ---------------------------------------------------------------------
+    auto Y = sdfg::analysis::mlir_value_to_name(libraryNodeOp.getResults()[0]);
+    auto sdfg_type_Y = sdfg::analysis::mlir_type_to_sdfg_type(libraryNodeOp.getResults()[0].getType());
+    builder.add_container(Y, *sdfg_type_Y);
+    auto& Y_node = builder.add_access(block, Y);
+
+    // ---------------------------------------------------------------------
+    // Parse batch normalization attributes
+    // ---------------------------------------------------------------------
+    std::string epsilon = "0.00001f";
+    int axis = -1;
+    for (auto namedAttr : libraryNodeOp->getAttrs()) {
+      auto attrName = namedAttr.getName().getValue();
+      if (attrName == "axis") {
+        if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(namedAttr.getValue())) {
+          axis = static_cast<int>(intAttr.getValue().getSExtValue());
+        }
+      } else if (attrName == "epsilon") {
+        if (auto stringAttr = mlir::dyn_cast<mlir::StringAttr>(namedAttr.getValue())) {
+          epsilon = stringAttr.getValue().str();
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Create batch normalization node
+    // ---------------------------------------------------------------------
+    auto& library_node = builder.add_library_node<sdfg::math::ml::BatchNormalizationNode>(
+        block, sdfg::DebugInfo(), axis, epsilon
+    );
+
+    // ---------------------------------------------------------------------
+    // Connect inputs
+    // ---------------------------------------------------------------------
+    sdfg::data_flow::Subset begin_X;
+    sdfg::data_flow::Subset end_X;
+    if (sdfg_type_X.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_X), begin_X, end_X);
+    } else {
+      begin_X.push_back(sdfg::symbolic::integer(0));
+      end_X.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, X_node, library_node, "X", begin_X, end_X, sdfg_type_X);
+
+    sdfg::data_flow::Subset begin_Scale;
+    sdfg::data_flow::Subset end_Scale;
+    if (sdfg_type_Scale.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_Scale), begin_Scale, end_Scale);
+    } else {
+      begin_Scale.push_back(sdfg::symbolic::integer(0));
+      end_Scale.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, Scale_node, library_node, "Scale", begin_Scale, end_Scale, sdfg_type_Scale);
+
+    sdfg::data_flow::Subset begin_B;
+    sdfg::data_flow::Subset end_B;
+    if (sdfg_type_B.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_B), begin_B, end_B);
+    } else {
+      begin_B.push_back(sdfg::symbolic::integer(0));
+      end_B.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, B_node, library_node, "B", begin_B, end_B, sdfg_type_B);
+
+    sdfg::data_flow::Subset begin_Mean;
+    sdfg::data_flow::Subset end_Mean;
+    if (sdfg_type_Mean.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_Mean), begin_Mean, end_Mean);
+    } else {
+      begin_Mean.push_back(sdfg::symbolic::integer(0));
+      end_Mean.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, Mean_node, library_node, "input_mean", begin_Mean, end_Mean, sdfg_type_Mean);
+
+    sdfg::data_flow::Subset begin_Var;
+    sdfg::data_flow::Subset end_Var;
+    if (sdfg_type_Var.type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(sdfg_type_Var), begin_Var, end_Var);
+    } else {
+      begin_Var.push_back(sdfg::symbolic::integer(0));
+      end_Var.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, Var_node, library_node, "input_var", begin_Var, end_Var, sdfg_type_Var);
+
+    // ---------------------------------------------------------------------
+    // Connect output
+    // ---------------------------------------------------------------------
+    sdfg::data_flow::Subset begin_Y;
+    sdfg::data_flow::Subset end_Y;
+    if (sdfg_type_Y->type_id() == sdfg::types::TypeID::Array) {
+      sdfg::analysis::sdfg_array_to_subset(static_cast<const sdfg::types::Array&>(*sdfg_type_Y), begin_Y, end_Y);
+    } else {
+      begin_Y.push_back(sdfg::symbolic::integer(0));
+      end_Y.push_back(sdfg::symbolic::integer(0));
+    }
+    builder.add_computational_memlet(block, library_node, "Y", Y_node, begin_Y, end_Y, *sdfg_type_Y);
+
+    return true;
+}
+
 } // namespace nodes
 } // namespace analysis
 } // namespace sdfg

@@ -35,7 +35,7 @@ EXPECTED_OPS = {
         "Sub": 1,
         "Gemm": 1,
         "Tanh": 1,
-        "Metadata": 132,
+        "Metadata": 107,
     },
     "darknetaa53_Opset18": {
         "Conv": 52,
@@ -66,7 +66,7 @@ EXPECTED_OPS = {
         "Div": 5,
         "Erf": 5,
         "Sub": 1,
-        "Metadata": 219,
+        "Metadata": 208,
     },
     "retinanet_resnet50_fpn_v2_Opset18": {
         "Unsqueeze": 161,
@@ -221,6 +221,7 @@ def test_models(model_name, opset_version):
                 found_ops.update(["Metadata"])
                 continue
 
+    print(found_ops)
     for op_name, count in EXPECTED_OPS[model_name].items():
         assert found_ops[op_name] == count
 
