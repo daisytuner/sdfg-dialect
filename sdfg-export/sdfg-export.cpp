@@ -14,6 +14,9 @@
 
 #include <sdfg/codegen/dispatchers/node_dispatcher_registry.h>
 #include <sdfg/serializer/json_serializer.h>
+#include <cstdlib>
+#include <vector>
+#include <string>
 
 int main(int argc, char **argv) {
 
@@ -28,6 +31,36 @@ int main(int argc, char **argv) {
   sdfg::codegen::register_default_dispatchers();
   sdfg::serializer::register_default_serializers();
 
+  // Parse command line arguments manually to extract -o option
+  std::string outputPrefix;
+  std::vector<std::string> mlirArgs;
+  
+  for (int i = 1; i < argc; i++) {
+    std::string arg = argv[i];
+    if (arg == "-o" && i + 1 < argc) {
+      outputPrefix = argv[i + 1];
+      i++; // Skip the next argument as well
+    } else if (arg.substr(0, 2) == "-o" && arg.length() > 2) {
+      // Handle -o=value format
+      outputPrefix = arg.substr(2);
+    } else {
+      mlirArgs.push_back(arg);
+    }
+  }
+
+  // Set the output prefix if provided
+  if (!outputPrefix.empty()) {
+    mlir::sdfg::analysis::setExportSDFGOutputPrefix(outputPrefix);
+  }
+
+  // Convert back to argc/argv format for MLIR
+  std::vector<char*> mlirArgv;
+  mlirArgv.push_back(argv[0]); // program name
+  for (const auto& arg : mlirArgs) {
+    mlirArgv.push_back(const_cast<char*>(arg.c_str()));
+  }
+  int mlirArgc = mlirArgv.size();
+
   return mlir::asMainReturnCode(
-      mlir::MlirOptMain(argc, argv, "SDFG exporter\n", registry));
+      mlir::MlirOptMain(mlirArgc, mlirArgv.data(), "SDFG exporter\n", registry));
 } 

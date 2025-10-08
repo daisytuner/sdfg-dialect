@@ -17,6 +17,10 @@
 namespace {
 
 struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSDFGPass> {
+  std::string outputPrefix_;
+
+  ExportSDFGPass() : outputPrefix_("") {}
+  ExportSDFGPass(const std::string& outputPrefix) : outputPrefix_(outputPrefix) {}
   
   void visit_alloca(sdfg::builder::StructuredSDFGBuilder& builder,
                     mlir::sdfg::AllocaOp allocaOp) {
@@ -189,15 +193,20 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
       // Finish SDFG
       auto sdfg = builder.move();
 
+      // Apply output prefix if provided
+      std::string finalOutputPrefix = mlir::sdfg::analysis::g_outputPrefix.empty() 
+        ? moduleName + "." + sdfgName 
+        : mlir::sdfg::analysis::g_outputPrefix;
+
       sdfg::visualizer::DotVisualizer visualizer(*sdfg);
       visualizer.visualize();
-      std::filesystem::path dotPath = moduleName + "." + sdfgName + ".dot";
+      std::filesystem::path dotPath = finalOutputPrefix + ".dot";
       visualizer.writeToFile(*sdfg, &dotPath);
 
       // Serialize SDFG to JSON
       sdfg::serializer::JSONSerializer serializer;
       auto j = serializer.serialize(*sdfg);
-      std::filesystem::path sdfgPath = moduleName + "." + sdfgName + ".json";
+      std::filesystem::path sdfgPath = finalOutputPrefix + ".json";
 
       std::ofstream ofs(sdfgPath);
       if (!ofs.is_open()) {
@@ -212,6 +221,13 @@ struct ExportSDFGPass : public mlir::sdfg::analysis::ExportSDFGPassBase<ExportSD
 
 } // end anonymous namespace
 
+// Define the global variable
+std::string mlir::sdfg::analysis::g_outputPrefix;
+
 std::unique_ptr<mlir::Pass> mlir::sdfg::analysis::createExportSDFGPass() {
   return std::make_unique<ExportSDFGPass>();
+}
+
+void mlir::sdfg::analysis::setExportSDFGOutputPrefix(const std::string& prefix) {
+  mlir::sdfg::analysis::g_outputPrefix = prefix;
 } 
